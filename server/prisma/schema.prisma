@@ -1,0 +1,71 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "cargo prisma"
+  output   = "../src/prisma.rs"
+}
+
+enum ProductAge {
+  ALL_AGE
+  R_RATED
+  ADULT
+}
+
+model Product {
+  // RJ_id
+  id           String             @id @default(uuid())
+  name         String
+  description  String?
+  series       Series?            @relation(fields: [seriesName], references: [name])
+  seriesName   String?
+  circle       Circle             @relation(fields: [circleId], references: [id])
+  circleId     String
+  actor        String[]
+  illustrator  String[]
+  // JPY
+  price        Int
+  saleCount    Int
+  age          ProductAge
+  releasedAt   DateTime
+  genre        Genre[]
+  rating       Float
+  ratingCount  Int
+  commentCount Int
+  userGenre    ProductUserGenre[]
+}
+
+model Genre {
+  id               String             @id @default(uuid())
+  name             String
+  description      String?
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+  deletedAt        DateTime?
+  products         Product[]
+  productUserGenre ProductUserGenre[]
+}
+
+model ProductUserGenre {
+  productId String
+  genreId   String
+  // Count of genre selected by user
+  voteCount Int
+  product   Product @relation(fields: [productId], references: [id])
+  genre     Genre   @relation(fields: [genreId], references: [id])
+
+  @@id([genreId, productId])
+}
+
+model Series {
+  name    String    @id
+  Product Product[]
+}
+
+model Circle {
+  id      String    @id
+  name    String
+  Product Product[]
+}
