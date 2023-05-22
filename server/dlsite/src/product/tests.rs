@@ -9,16 +9,9 @@ use crate::{
 };
 
 #[tokio::test]
-async fn get_product_1() {
-    get_product_1_content().await;
-}
-
-async fn get_product_1_content() -> anyhow::Result<()> {
+async fn get_product_1_content() {
     let client = DlsiteClient::default();
-    let res = client
-        .get_product("RJ403038")
-        .await
-        .context("Failed to get product info")?;
+    let res = client.get_product("RJ403038").await.unwrap();
 
     assert_eq!(res.id, "RJ403038".to_string());
     assert_eq!(
@@ -46,11 +39,9 @@ async fn get_product_1_content() -> anyhow::Result<()> {
     }));
 
     dbg!(&res);
-
-    Ok(())
 }
 
-// #[tokio::test]
+#[tokio::test]
 async fn get_product_2() {
     let client = DlsiteClient::default();
     let res = client

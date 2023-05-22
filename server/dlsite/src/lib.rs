@@ -1,7 +1,10 @@
+//! # dlsite-rs
+//! This is a library to get information about products on DLsite.
+//! Some information is not available on the HTML page, so this library also makes requests to the AJAX API.
+
 use thiserror::Error;
 
 pub mod circle;
-pub mod creator;
 pub mod genre;
 pub mod product;
 pub mod search;
@@ -21,6 +24,7 @@ pub enum DlsiteError {
 
 pub(crate) type Result<T> = std::result::Result<T, DlsiteError>;
 
+/// API client for DLsite.
 #[derive(Default)]
 pub struct DlsiteClient {
     client: reqwest::Client,

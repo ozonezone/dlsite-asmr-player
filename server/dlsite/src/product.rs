@@ -8,6 +8,7 @@ pub mod review;
 #[cfg(test)]
 mod tests;
 
+/// The age rating of a product on DLsite.
 #[derive(Debug, PartialEq, Eq)]
 pub enum AgeRating {
     AllAges,
@@ -15,8 +16,7 @@ pub enum AgeRating {
     Adult,
 }
 
-pub type Id = String;
-
+/// A product on DLsite.
 #[derive(Debug)]
 pub struct Product {
     pub id: String,
@@ -27,6 +27,7 @@ pub struct Product {
     pub genre: Vec<Genre>,
     pub circle: Circle,
     pub price: u64,
+    pub series: Option<String>,
     pub sale_count: u64,
     pub review_count: Option<u64>,
     pub rating: Option<f64>,
@@ -36,6 +37,7 @@ pub struct Product {
     pub reviewer_genre: Vec<(Genre, u32)>,
 }
 
+/// People who contributed to a product on DLsite.
 #[derive(Debug)]
 pub struct ProductPeople {
     pub author: Option<Vec<String>>,
@@ -44,6 +46,7 @@ pub struct ProductPeople {
     pub voice_actor: Option<Vec<String>>,
 }
 
+/// The type of a product on DLsite. Currently, only voice products are supported.
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub enum WorkType {
     Voice,
@@ -51,6 +54,25 @@ pub enum WorkType {
 }
 
 impl DlsiteClient {
+    /// Get information about a product (also called "work").
+    /// This function will make 3 requests to DLsite: one to get the HTML page, one to get the AJAX data and one to get the review data.
+    /// Especially, review data can be used as independent information.
+    ///
+    /// # Arguments
+    /// * `product_id` - The product ID to get information about. Example: `RJ123456`.
+    /// NOTE: This must be capitalized.
+    ///
+    /// # Example
+    /// ```
+    /// use dlsite::{DlsiteClient, Product};
+    /// use tokio;
+    /// #[tokio::main]
+    /// async fn main() {
+    ///     let client = DlsiteClient::new().unwrap();
+    ///     let product = client.get_product("RJ123456").await.unwrap();
+    ///     println!("{:#?}", product);
+    /// }
+    /// ```
     pub async fn get_product(&self, product_id: &str) -> Result<Product> {
         let (html_data, ajax_data, review_data) = tokio::try_join!(
             self.get_product_html(product_id),
@@ -65,6 +87,7 @@ impl DlsiteClient {
             released_at: html_data.released_at,
             age_rating: html_data.age_rating,
             genre: html_data.genre,
+            series: html_data.series,
             circle: html_data.circle,
             price: ajax_data.price,
             rating: ajax_data.rate_average_2dp,

@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use serde::{de::Error, Deserialize, Deserializer}; // 1.0.94
+use serde::{Deserialize, Deserializer}; // 1.0.94
 
 use crate::genre::Genre;
 use crate::utils::ToParseError;
@@ -104,7 +104,15 @@ where
 impl DlsiteClient {
     /// Get product reviews and related informations.
     ///
+    /// # Arguments
+    /// * `product_id` - Product ID.
     /// * `mix_pickup` - Mixes picked up review. To get user genre, this must be true.
+    /// * `order` - Sort order of reviews.
+    /// * `limit` - Number of reviews to get.
+    /// * `page` - Page number.
+    ///
+    /// # Returns
+    /// * `ProductReview` - Product reviews and related informations.
     pub async fn get_product_review(
         &self,
         product_id: &str,
@@ -122,7 +130,8 @@ impl DlsiteClient {
             "/api/review?product_id={}&limit={}&mix_pickup={}&page={}&order={}&locale=ja_JP",
             product_id, limit, mix_pickup, page, order_str
         );
-        let json: serde_json::Value = serde_json::from_str(&self.get(&path).await?)?;
+        let json_str = self.get(&path).await?;
+        let json: serde_json::Value = serde_json::from_str(&json_str)?;
 
         if !json["is_success"]
             .as_bool()

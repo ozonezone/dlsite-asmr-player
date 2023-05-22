@@ -16,6 +16,7 @@ pub struct ProductHtml {
     pub images: Vec<Url>,
     pub people: ProductPeople,
     pub genre: Vec<Genre>,
+    pub series: Option<String>,
 }
 
 impl DlsiteClient {
@@ -97,6 +98,19 @@ fn parse_product_html(html: &Html) -> Result<ProductHtml> {
         _ => AgeRating::R,
     };
 
+    let series = work_outline_table.get("シリーズ名");
+    let series = if let Some(series) = series {
+        Some(
+            series
+                .select(&Selector::parse("a").unwrap())
+                .next()
+                .to_parse_error("Series parse error")?
+                .inner_html(),
+        )
+    } else {
+        None
+    };
+
     let released_at = work_outline_table
         .get("販売日")
         .to_parse_error("No released_at found")?
@@ -134,6 +148,7 @@ fn parse_product_html(html: &Html) -> Result<ProductHtml> {
         images,
         people: parse_product_people(html)?,
         genre,
+        series,
     })
 }
 

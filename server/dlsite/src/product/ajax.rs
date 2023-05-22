@@ -35,8 +35,9 @@ where
 
 impl DlsiteClient {
     pub(super) async fn get_product_ajax(&self, product_id: &str) -> Result<ProductAjax> {
-        let path = format!("/work/=/product_id/{}", product_id);
+        let path = format!("/product/info/ajax?product_id={}", product_id);
         let ajax_json_str = self.get(&path).await?;
+
         let mut json: HashMap<String, ProductAjax> = serde_json::from_str(&ajax_json_str)?;
         let product = json
             .remove(product_id)
