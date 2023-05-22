@@ -105,7 +105,6 @@ impl DlsiteClient {
     /// Get product reviews and related informations.
     ///
     /// * `mix_pickup` - Mixes picked up review. To get user genre, this must be true.
-    #[async_backtrace::framed]
     pub async fn get_product_review(
         &self,
         product_id: &str,

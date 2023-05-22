@@ -11,8 +11,6 @@ use crate::{
 #[tokio::test]
 async fn get_product_1() {
     get_product_1_content().await;
-
-    async_backtrace::taskdump_tree(true);
 }
 
 async fn get_product_1_content() -> anyhow::Result<()> {

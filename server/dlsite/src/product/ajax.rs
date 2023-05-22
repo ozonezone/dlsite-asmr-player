@@ -34,7 +34,6 @@ where
 }
 
 impl DlsiteClient {
-    #[async_backtrace::framed]
     pub(super) async fn get_product_ajax(&self, product_id: &str) -> Result<ProductAjax> {
         let path = format!("/work/=/product_id/{}", product_id);
         let ajax_json_str = self.get(&path).await?;

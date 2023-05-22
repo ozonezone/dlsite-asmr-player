@@ -19,7 +19,6 @@ pub struct ProductHtml {
 }
 
 impl DlsiteClient {
-    #[async_backtrace::framed]
     pub(super) async fn get_product_html(&self, product_id: &str) -> Result<ProductHtml> {
         let path = format!("/work/=/product_id/{}", product_id);
         let html = self.get(&path).await?;

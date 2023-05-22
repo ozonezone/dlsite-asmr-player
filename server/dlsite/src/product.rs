@@ -51,7 +51,6 @@ pub enum WorkType {
 }
 
 impl DlsiteClient {
-    #[async_backtrace::framed]
     pub async fn get_product(&self, product_id: &str) -> Result<Product> {
         let (html_data, ajax_data, review_data) = tokio::try_join!(
             self.get_product_html(product_id),
