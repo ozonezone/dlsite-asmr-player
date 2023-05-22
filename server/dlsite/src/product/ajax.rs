@@ -6,6 +6,7 @@ use crate::{DlsiteClient, DlsiteError, Result};
 
 use super::WorkType;
 
+/// Data of a product from the AJAX API.
 #[derive(Debug, Clone, Deserialize)]
 pub struct ProductAjax {
     pub maker_id: String,
@@ -34,7 +35,20 @@ where
 }
 
 impl DlsiteClient {
-    pub(super) async fn get_product_ajax(&self, product_id: &str) -> Result<ProductAjax> {
+    /// Get the AJAX data of multiple products.
+    pub async fn get_products_ajax(
+        &self,
+        product_ids: Vec<&str>,
+    ) -> Result<HashMap<String, ProductAjax>> {
+        let path = format!("/product/info/ajax?product_id={}", product_ids.join(","));
+        let ajax_json_str = self.get(&path).await?;
+
+        let json: HashMap<String, ProductAjax> = serde_json::from_str(&ajax_json_str)?;
+
+        Ok(json)
+    }
+    /// Get the AJAX data of a product.
+    pub async fn get_product_ajax(&self, product_id: &str) -> Result<ProductAjax> {
         let path = format!("/product/info/ajax?product_id={}", product_id);
         let ajax_json_str = self.get(&path).await?;
 

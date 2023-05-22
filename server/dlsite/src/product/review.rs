@@ -12,7 +12,7 @@ pub enum ReviewSortOrder {
     Top,
 }
 
-#[derive(Default, Debug, Clone, PartialEq, Deserialize)]
+#[derive(Default, Debug, Clone, Deserialize)]
 pub struct ProductReview {
     pub is_success: bool,
     pub error_msg: String,
@@ -21,7 +21,7 @@ pub struct ProductReview {
     pub reviewer_genre_list: Option<Vec<(Genre, u32)>>,
 }
 
-#[derive(Default, Debug, Clone, PartialEq, Deserialize)]
+#[derive(Default, Debug, Clone, Deserialize)]
 pub struct Review {
     pub member_review_id: String,
     pub workno: String,

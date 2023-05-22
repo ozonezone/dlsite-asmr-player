@@ -2,8 +2,8 @@ use crate::{circle::Circle, genre::Genre, DlsiteClient, Result};
 use chrono::NaiveDate;
 use url::Url;
 
-mod ajax;
-mod html;
+pub mod ajax;
+pub mod html;
 pub mod review;
 #[cfg(test)]
 mod tests;
