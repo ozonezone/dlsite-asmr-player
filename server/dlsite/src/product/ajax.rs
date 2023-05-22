@@ -1,10 +1,12 @@
 use std::collections::HashMap;
 
-use serde::Deserialize;
+use serde::{Deserialize, Deserializer};
 
-use crate::{DlsiteError, Result};
+use crate::{DlsiteClient, DlsiteError, Result};
 
-#[derive(Default, Debug, Clone, Deserialize)]
+use super::WorkType;
+
+#[derive(Debug, Clone, Deserialize)]
 pub struct ProductAjax {
     pub maker_id: String,
     #[serde(deserialize_with = "serde_aux::prelude::deserialize_number_from_string")]
@@ -15,13 +17,32 @@ pub struct ProductAjax {
     pub rate_count: Option<u64>,
     pub work_name: String,
     pub price: u64,
-    pub work_type: String,
+    #[serde(deserialize_with = "deserialize_work_type")]
+    pub work_type: WorkType,
 }
 
-pub(super) fn parse_product_json(json_str: &str, product_id: &str) -> Result<ProductAjax> {
-    let mut json: HashMap<String, ProductAjax> = serde_json::from_str(json_str)?;
-    let product = std::mem::replace(&mut json.get_mut(product_id), None)
-        .ok_or_else(|| DlsiteError::ParseError("Failed to parse json".to_string()))?;
-    let product = std::mem::take(product);
-    Ok(product)
+fn deserialize_work_type<'de, D>(deserializer: D) -> std::result::Result<WorkType, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    let s: String = Deserialize::deserialize(deserializer)?;
+
+    Ok(match &*s {
+        "SOU" => WorkType::Voice,
+        _ => WorkType::Unknown,
+    })
+}
+
+impl DlsiteClient {
+    #[async_backtrace::framed]
+    pub(super) async fn get_product_ajax(&self, product_id: &str) -> Result<ProductAjax> {
+        let path = format!("/work/=/product_id/{}", product_id);
+        let ajax_json_str = self.get(&path).await?;
+        let mut json: HashMap<String, ProductAjax> = serde_json::from_str(&ajax_json_str)?;
+        let product = json
+            .remove(product_id)
+            .ok_or_else(|| DlsiteError::ParseError("Failed to parse ajax json".to_string()))?;
+
+        Ok(product)
+    }
 }

@@ -1,0 +1,93 @@
+use anyhow::Context;
+use chrono::NaiveDate;
+
+use crate::{
+    circle::Circle,
+    genre::Genre,
+    product::{AgeRating, WorkType},
+    DlsiteClient,
+};
+
+#[tokio::test]
+async fn get_product_1() {
+    get_product_1_content().await;
+
+    async_backtrace::taskdump_tree(true);
+}
+
+async fn get_product_1_content() -> anyhow::Result<()> {
+    let client = DlsiteClient::default();
+    let res = client
+        .get_product("RJ403038")
+        .await
+        .context("Failed to get product info")?;
+
+    assert_eq!(res.id, "RJ403038".to_string());
+    assert_eq!(
+        res.title,
+        "【ブルーアーカイブ】ユウカASMR～頑張るあなたのすぐそばに～".to_string()
+    );
+    assert_eq!(
+        res.circle,
+        Circle {
+            name: "Yostar".to_string(),
+            id: "RG62982".to_string()
+        }
+    );
+    assert_eq!(res.work_type, WorkType::Voice);
+    assert_eq!(
+        res.released_at,
+        NaiveDate::from_ymd_opt(2022, 7, 17).unwrap()
+    );
+    assert_eq!(res.age_rating, AgeRating::AllAges);
+    assert_eq!(res.people.voice_actor, Some(vec!["春花らん".to_string()]));
+    assert!(res.sale_count > 50000);
+    assert!(res.genre.contains(&Genre {
+        name: "ASMR".to_string(),
+        id: "497".to_string()
+    }));
+
+    dbg!(&res);
+
+    Ok(())
+}
+
+// #[tokio::test]
+async fn get_product_2() {
+    let client = DlsiteClient::default();
+    let res = client
+        .get_product("RJ01017217")
+        .await
+        .context("Failed to get product info");
+    let res = res.unwrap();
+    assert_eq!(res.id, "RJ01017217".to_string());
+    assert_eq!(
+        res.title,
+        "【イヤーキャンドル】道草屋-なつな3-たぬさんこんにちは【ずぶ濡れシャンプー】".to_string()
+    );
+    assert_eq!(
+        res.circle,
+        Circle {
+            name: "桃色CODE".to_string(),
+            id: "RG24350".to_string()
+        }
+    );
+    assert_eq!(res.work_type, WorkType::Voice);
+    assert_eq!(
+        res.released_at,
+        NaiveDate::from_ymd_opt(2023, 1, 21).unwrap()
+    );
+    assert_eq!(res.age_rating, AgeRating::Adult);
+    assert_eq!(
+        res.people.voice_actor,
+        Some(vec!["丹羽うさぎ".to_string(), "藤堂れんげ".to_string()])
+    );
+    assert_eq!(res.people.author, Some(vec!["桃鳥".to_string()]));
+    assert!(res.sale_count > 10000);
+    assert!(res.genre.contains(&Genre {
+        name: "ASMR".to_string(),
+        id: "497".to_string()
+    }));
+
+    dbg!(&res);
+}

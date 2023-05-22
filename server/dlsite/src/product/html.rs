@@ -4,11 +4,32 @@ use chrono::NaiveDate;
 use scraper::{ElementRef, Html, Selector};
 use url::Url;
 
-use crate::{circle::Circle, genre::Genre, utils::ToParseError, DlsiteError, Result};
+use crate::{circle::Circle, genre::Genre, utils::ToParseError, DlsiteClient, DlsiteError, Result};
 
-use super::{ajax::ProductAjax, AgeRating, Product, ProductPeople, WorkType};
+use super::{AgeRating, ProductPeople};
 
-pub(super) fn get_work_outline_table(html: &Html) -> HashMap<String, ElementRef> {
+#[derive(Debug)]
+pub struct ProductHtml {
+    pub released_at: NaiveDate,
+    pub age_rating: AgeRating,
+    pub circle: Circle,
+    pub images: Vec<Url>,
+    pub people: ProductPeople,
+    pub genre: Vec<Genre>,
+}
+
+impl DlsiteClient {
+    #[async_backtrace::framed]
+    pub(super) async fn get_product_html(&self, product_id: &str) -> Result<ProductHtml> {
+        let path = format!("/work/=/product_id/{}", product_id);
+        let html = self.get(&path).await?;
+        let html = Html::parse_document(&html);
+
+        parse_product_html(&html)
+    }
+}
+
+fn get_work_outline_table(html: &Html) -> HashMap<String, ElementRef> {
     let mut map = HashMap::new();
     for element in html.select(&Selector::parse("#work_outline tr").unwrap()) {
         let th = element.select(&Selector::parse("th").unwrap()).next();
@@ -24,7 +45,7 @@ pub(super) fn get_work_outline_table(html: &Html) -> HashMap<String, ElementRef>
     map
 }
 
-pub(super) fn parse_product(id: &str, json: ProductAjax, html: &Html) -> Result<Product> {
+fn parse_product_html(html: &Html) -> Result<ProductHtml> {
     let circle = html
         .select(&Selector::parse("#work_maker .maker_name a").unwrap())
         .next()
@@ -77,6 +98,15 @@ pub(super) fn parse_product(id: &str, json: ProductAjax, html: &Html) -> Result<
         _ => AgeRating::R,
     };
 
+    let released_at = work_outline_table
+        .get("販売日")
+        .to_parse_error("No released_at found")?
+        .text()
+        .next()
+        .to_parse_error("No released_at found")?;
+    let released_at = NaiveDate::parse_from_str(released_at, "%Y年%m月%d日")
+        .map_err(|_| DlsiteError::ParseError("Failed to parse released_at".to_string()))?;
+
     let genre = work_outline_table
         .get("ジャンル")
         .to_parse_error("No genre found")?
@@ -98,72 +128,37 @@ pub(super) fn parse_product(id: &str, json: ProductAjax, html: &Html) -> Result<
         })
         .collect::<Vec<_>>();
 
-    let released_at = work_outline_table
-        .get("販売日")
-        .to_parse_error("No released_at found")?
-        .text()
-        .next()
-        .to_parse_error("No released_at found")?;
-
-    let released_at = NaiveDate::parse_from_str(released_at, "%Y年%m月%d日")
-        .map_err(|_| DlsiteError::ParseError("Failed to parse released_at".to_string()))?;
-
-    Ok(Product {
-        id: id.to_string(),
-        title: json.work_name,
-        work_type: match &*json.work_type {
-            "SOU" => WorkType::Voice,
-            _ => WorkType::Unknown,
-        },
+    Ok(ProductHtml {
         released_at,
         age_rating,
-        genre,
         circle,
-        price: json.price,
-        rating: json.rate_average_2dp,
-        rate_count: json.rate_count,
-        sale_count: json.dl_count,
-        review_count: json.review_count,
         images,
         people: parse_product_people(html)?,
+        genre,
     })
 }
 
 pub(super) fn parse_product_people(html: &Html) -> Result<ProductPeople> {
     let work_outline_table = get_work_outline_table(html);
 
-    let author: Option<Vec<String>> = work_outline_table.get("作者").map(|element| {
-        element
-            .select(&Selector::parse("a").unwrap())
-            .filter_map(|element| element.text().next().map(|s| s.to_string()))
-            .collect::<Vec<_>>()
-    });
-
-    let voice_actor: Option<Vec<String>> = work_outline_table.get("声優").map(|element| {
-        element
-            .select(&Selector::parse("a").unwrap())
-            .filter_map(|element| element.text().next().map(|s| s.to_string()))
-            .collect::<Vec<_>>()
-    });
-
-    let scenario: Option<Vec<String>> = work_outline_table.get("シナリオ").map(|element| {
-        element
-            .select(&Selector::parse("a").unwrap())
-            .filter_map(|element| element.text().next().map(|s| s.to_string()))
-            .collect::<Vec<_>>()
-    });
-
-    let illustrator: Option<Vec<String>> = work_outline_table.get("イラスト").map(|element| {
-        element
-            .select(&Selector::parse("a").unwrap())
-            .filter_map(|element| element.text().next().map(|s| s.to_string()))
-            .collect::<Vec<_>>()
-    });
+    macro_rules! get_people {
+        ($key:literal) => {
+            work_outline_table
+                .get($key)
+                .map(|element| {
+                    element
+                        .select(&Selector::parse("a").unwrap())
+                        .filter_map(|element| element.text().next().map(|s| s.to_string()))
+                        .collect::<Vec<_>>()
+                })
+                .filter(|v| !v.is_empty())
+        };
+    }
 
     Ok(ProductPeople {
-        author,
-        scenario,
-        illustrator,
-        voice_actor,
+        author: get_people!("作者"),
+        scenario: get_people!("シナリオ"),
+        illustrator: get_people!("イラスト"),
+        voice_actor: get_people!("声優"),
     })
 }
