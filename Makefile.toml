@@ -1,0 +1,12 @@
+[tasks.dev-backend]
+script = """
+cd server && cargo watch -- cargo run
+"""
+
+[tasks.dev-frontend]
+script = """
+cd client && pnpm dev
+"""
+
+[tasks.dev]
+run_task = { name = ["dev-frontend", "dev-backend"], parallel = true }

@@ -19,7 +19,7 @@ model Product {
   id           String             @id @default(uuid())
   name         String
   description  String?
-  series       Series?            @relation(fields: [seriesName], references: [name])
+  series       String?
   seriesName   String?
   circle       Circle             @relation(fields: [circleId], references: [id])
   circleId     String
@@ -57,11 +57,6 @@ model ProductUserGenre {
   genre     Genre   @relation(fields: [genreId], references: [id])
 
   @@id([genreId, productId])
-}
-
-model Series {
-  name    String    @id
-  Product Product[]
 }
 
 model Circle {

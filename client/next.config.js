@@ -1,4 +1,10 @@
-/** @type {import('next').NextConfig} */
-const nextConfig = {}
+const is_prod = process.env.NODE_ENV === "production";
 
-module.exports = nextConfig
+const output = is_prod ? "export" : undefined;
+
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  output,
+};
+
+module.exports = nextConfig;
