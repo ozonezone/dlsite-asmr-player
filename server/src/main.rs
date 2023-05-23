@@ -1,5 +1,8 @@
-use rspc::{integrations::httpz::Request, ErrorCode};
-use std::sync::{Arc, Mutex};
+use anyhow::Result;
+use rspc::integrations::httpz::Request;
+use std::sync::Arc;
+use tokio::sync::RwLock;
+use tracing::info;
 
 #[cfg(not(debug_assertions))]
 use axum::{
@@ -9,52 +12,54 @@ use axum::{
 #[cfg(not(debug_assertions))]
 use tower_http::services::{ServeDir, ServeFile};
 
-use crate::config::Config;
+use crate::{config::Config, router::RouterContext};
 
 mod config;
 #[allow(warnings, unused)]
 mod prisma;
-
-pub(crate) struct Ctx {
-    pub config: Arc<Mutex<Config>>,
-    pub db: Arc<prisma::PrismaClient>,
-    pub token: Option<String>,
-}
+mod router;
+mod scan;
 
 #[tokio::main]
-async fn main() {
-    let config = Arc::new(Mutex::new(Config {
-        password: "password".to_string(),
-    }));
-    let db = Arc::new(prisma::new_client().await.unwrap());
+async fn main() -> Result<()> {
+    tracing_subscriber::fmt().init();
 
-    let router = rspc::Router::<Ctx>::new()
-        .config(rspc::Config::new().export_ts_bindings("../client/bindings/bindings.ts"))
-        .query("ping", |t| t(|_, _: ()| "ping"))
-        .middleware(|mw| {
-            mw.middleware(|mw| async move {
-                dbg!(&mw.ctx.token);
-                match &mw.ctx.token {
-                    Some(token) => {
-                        if token == &mw.ctx.config.lock().unwrap().password {
-                            Ok(mw)
-                        } else {
-                            Err(rspc::Error::new(
-                                ErrorCode::Unauthorized,
-                                "Unauthorized".into(),
-                            ))
-                        }
-                    }
-                    None => Err(rspc::Error::new(
-                        ErrorCode::Unauthorized,
-                        "Unauthorized".into(),
-                    )),
-                }
-            })
-        })
-        .query("ping_auth", |t| t(|_, _: ()| "ping_auth"))
-        .build()
-        .arced();
+    let config = match Config::from_file().await {
+        Ok(config) => config,
+        Err(e) => {
+            info!("Failed to load config file: {:?}", e);
+            info!("Creating default config file");
+            let config = Config::default();
+            let config_path = config.write_to_file().await?;
+            let config_path = config_path.to_str().unwrap_or("");
+            info!("Config file created: {}", config_path);
+            config
+        }
+    };
+
+    let config = Arc::new(RwLock::new(config));
+
+    let client = prisma::new_client().await.unwrap();
+
+    #[cfg(debug_assertions)]
+    {
+        info!("Migrating database accepting data loss (dev mode)");
+        client._db_push().accept_data_loss().await?;
+    }
+
+    #[cfg(not(debug_assertions))]
+    {
+        info!("Migrating database");
+        client._migrate_deploy().await?;
+    }
+
+    let db = Arc::new(client);
+    let router = router::mount();
+    let scan_status = Arc::new(RwLock::new(router::ScanStatus {
+        is_scanning: false,
+        current: None,
+        total: None,
+    }));
 
     let app = axum::Router::new().nest(
         "/rspc",
@@ -67,10 +72,11 @@ async fn main() {
                         .map(|(_, value)| value.to_string())
                 });
 
-                Ctx {
+                RouterContext {
                     config: config.clone(),
                     db: db.clone(),
                     token,
+                    scan_status,
                 }
             })
             .axum(),
@@ -94,4 +100,6 @@ async fn main() {
         .serve(app.into_make_service())
         .await
         .unwrap();
+
+    Ok(())
 }

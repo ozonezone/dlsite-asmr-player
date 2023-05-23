@@ -28,7 +28,7 @@ pub enum DlsiteError {
 pub(crate) type Result<T> = std::result::Result<T, DlsiteError>;
 
 /// API client for DLsite.
-#[derive(Default)]
+#[derive(Default, Clone)]
 pub struct DlsiteClient {
     client: reqwest::Client,
 }
