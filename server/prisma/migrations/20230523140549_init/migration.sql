@@ -56,9 +56,6 @@ CREATE TABLE "_GenreToProduct" (
 );
 
 -- CreateIndex
-CREATE UNIQUE INDEX "ProductUserGenre_genreId_productId_key" ON "ProductUserGenre"("genreId", "productId");
-
--- CreateIndex
 CREATE UNIQUE INDEX "_GenreToProduct_AB_unique" ON "_GenreToProduct"("A", "B");
 
 -- CreateIndex

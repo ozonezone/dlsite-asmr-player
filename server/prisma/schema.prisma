@@ -56,7 +56,6 @@ model ProductUserGenre {
   genre     Genre   @relation(fields: [genreId], references: [id])
 
   @@id([genreId, productId])
-  @@unique([genreId, productId])
 }
 
 model Circle {

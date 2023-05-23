@@ -22,7 +22,9 @@ mod scan;
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    tracing_subscriber::fmt().init();
+    tracing_subscriber::fmt()
+        .with_env_filter("dlsite=debug,server=debug")
+        .init();
 
     let config = match Config::from_file().await {
         Ok(config) => config,
