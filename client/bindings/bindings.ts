@@ -2,7 +2,8 @@
 
 export type Procedures = {
     queries: 
-        { key: "hello", input: never, result: string },
+        { key: "ping", input: never, result: string } | 
+        { key: "ping_auth", input: never, result: string },
     mutations: never,
     subscriptions: never
 };

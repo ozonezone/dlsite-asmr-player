@@ -5,21 +5,23 @@ import { createReactQueryHooks } from "@rspc/react";
 
 import type { Procedures } from "@/bindings/bindings"; // These were the bindings exported from your Rust code!
 
-// You must provide the generated types as a generic and create a transport (in this example we are using HTTP Fetch) so that the client knows how to communicate with your API.
 const client = createClient<Procedures>({
-  // Refer to the integration your using for the correct transport.
-  transport: new WebsocketTransport(`ws://localhost:4000/rspc/ws`),
+  transport: new WebsocketTransport(
+    `ws://localhost:4000/rspc/ws?token=password`,
+  ),
 });
 
 const queryClient = new QueryClient();
 const rspc = createReactQueryHooks<Procedures>();
 
 function SomeComponent() {
-  const { data, isLoading, error } = rspc.useQuery(["hello"]);
+  const { data, isLoading, error } = rspc.useQuery(["ping"]);
+  const { data: data2 } = rspc.useQuery(["ping_auth"]);
 
   return (
     <>
       <p>{data}</p>
+      <p>{data2}</p>
     </>
   );
 }

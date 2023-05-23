@@ -7,4 +7,6 @@ edition = "2021"
 [features]
 
 [dependencies]
-prisma-client-rust-cli = { git = "https://github.com/Brendonovich/prisma-client-rust", tag = "0.6.8" }
+prisma-client-rust-cli = { git = "https://github.com/Brendonovich/prisma-client-rust", tag = "0.6.8", features = [
+  "rspc",
+] }
