@@ -12,7 +12,7 @@ pub(crate) fn mount() -> RouterBuilder {
                 ));
             }
 
-            scan::scan(&ctx.config.read().await.scan_dir, true, ctx.db.clone())
+            scan::scan(&ctx.config.read().await.scan_dir, false, &ctx.db.clone())
                 .await
                 .map_err(|e| {
                     rspc::Error::new(
