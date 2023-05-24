@@ -1,10 +1,11 @@
 use std::sync::Arc;
 
+use deadpool_postgres::Pool;
 use rspc::{ErrorCode, Router};
 use tokio::sync::RwLock;
 use tracing::info;
 
-use crate::{config::Config, prisma};
+use crate::config::Config;
 
 mod config;
 mod scan;
@@ -13,7 +14,7 @@ type RouterBuilder = rspc::RouterBuilder<RouterContext>;
 
 pub(crate) struct RouterContext {
     pub config: Arc<RwLock<Config>>,
-    pub db: Arc<prisma::PrismaClient>,
+    pub pool: Pool,
     pub token: Option<String>,
     pub scan_status: Arc<RwLock<ScanStatus>>,
 }

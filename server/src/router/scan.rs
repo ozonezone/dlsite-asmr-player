@@ -12,7 +12,14 @@ pub(crate) fn mount() -> RouterBuilder {
                 ));
             }
 
-            scan::scan(&ctx.config.read().await.scan_dir, false, &ctx.db.clone())
+            let connection = ctx.pool.get().await.map_err(|e| {
+                rspc::Error::new(
+                    rspc::ErrorCode::InternalServerError,
+                    format!("Failed to get connection: {}", e),
+                )
+            })?;
+
+            scan::scan(&ctx.config.read().await.scan_dir, false, &ctx.pool)
                 .await
                 .map_err(|e| {
                     rspc::Error::new(

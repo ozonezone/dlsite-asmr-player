@@ -15,8 +15,8 @@ use tower_http::services::{ServeDir, ServeFile};
 use crate::{config::Config, router::RouterContext};
 
 mod config;
-#[allow(warnings, unused)]
-mod prisma;
+mod cornucopia;
+mod pool;
 mod router;
 mod scan;
 
@@ -39,21 +39,9 @@ async fn main() -> Result<()> {
 
     let config = Arc::new(RwLock::new(config));
 
-    let client = prisma::new_client().await.unwrap();
+    let pool = pool::create_pool().await.unwrap();
+    let mut client = pool.get().await.unwrap();
 
-    #[cfg(debug_assertions)]
-    {
-        info!("Migrating database accepting data loss (dev mode)");
-        client._db_push().accept_data_loss().await?;
-    }
-
-    #[cfg(not(debug_assertions))]
-    {
-        info!("Migrating database");
-        client._migrate_deploy().await?;
-    }
-
-    let db = Arc::new(client);
     let router = router::mount();
     let scan_status = Arc::new(RwLock::new(router::ScanStatus {
         is_scanning: false,
@@ -74,7 +62,7 @@ async fn main() -> Result<()> {
 
                 RouterContext {
                     config: config.clone(),
-                    db: db.clone(),
+                    pool,
                     token,
                     scan_status,
                 }

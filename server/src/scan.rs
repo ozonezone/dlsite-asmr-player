@@ -1,13 +1,18 @@
 use std::path::PathBuf;
 
-use chrono::TimeZone;
+use chrono::{Datelike, TimeZone};
+use cornucopia_async::Params;
+use deadpool_postgres::Pool;
 use futures::stream::StreamExt;
 use once_cell::sync::Lazy;
 use regex::Regex;
 use tracing::{error, info, warn};
 use walkdir::WalkDir;
 
-use crate::prisma::{self, PrismaClient};
+use crate::cornucopia::{
+    queries::insert_product::{exist_product, insert_product, InsertProductParams},
+    types::public::Age,
+};
 
 static DLSITE_FOLDER_REGEX: Lazy<Regex> = Lazy::new(|| regex::Regex::new(r"(?i)RJ\d+").unwrap());
 
@@ -48,33 +53,29 @@ async fn scan_rj_folder(paths: &Vec<PathBuf>) -> Vec<(String, PathBuf)> {
 /// # Arguments
 /// * `folders` - List of folders to scan
 /// * `force` - Force fetch metadata for each RJ folder even if the metadata already exists in db.
-pub async fn scan(folders: &Vec<PathBuf>, force: bool, db: &PrismaClient) -> anyhow::Result<()> {
+pub async fn scan(folders: &Vec<PathBuf>, force: bool, pool: &Pool) -> anyhow::Result<()> {
     info!("Starting scan");
+
+    let client = pool.get().await?;
 
     let id_paths = scan_rj_folder(folders).await;
 
     let id_to_fetch = if force {
-        let ids: Vec<String> = db
-            .product()
-            .find_many(
-                id_paths
-                    .iter()
-                    .map(|(id, _)| crate::prisma::product::id::equals(id.to_string()))
-                    .collect(),
-            )
-            .select(prisma::product::select!({ id }))
-            .exec()
-            .await?
-            .into_iter()
-            .map(|res| res.id)
-            .collect();
-
         id_paths
-            .into_iter()
-            .filter(|(id, _)| !ids.contains(id))
-            .collect::<Vec<_>>()
     } else {
+        let find_ids = id_paths
+            .iter()
+            .map(|(id, _)| id.to_string())
+            .collect::<Vec<_>>();
+        let db_available_id = exist_product().bind(&client, &find_ids).all().await?;
         id_paths
+            .into_iter()
+            .filter(|(id, _)| {
+                !db_available_id
+                    .iter()
+                    .any(|db_id| db_id.to_uppercase() == id.to_uppercase())
+            })
+            .collect::<Vec<_>>()
     };
 
     let dlsite_client = dlsite::DlsiteClient::default();
@@ -109,93 +110,57 @@ pub async fn scan(folders: &Vec<PathBuf>, force: bool, db: &PrismaClient) -> any
 
     info!("Fetched metadata for {} RJ folders", metadata.len());
 
-    let batch = metadata
-        .into_iter()
-        .map(|(data, path)| {
-            dbg!(&data.circle.id);
-            (
-                // upsert circle
-                db.circle().upsert(
-                    prisma::circle::id::equals(data.circle.id.clone()),
-                    (data.circle.id.clone(), data.circle.name, vec![]),
-                    vec![],
-                ),
-                // upsert genres
-                [
-                    data.genre.clone(),
-                    data.reviewer_genre
-                        .iter()
-                        .map(|genre| genre.0.clone())
-                        .collect::<Vec<_>>(),
-                ]
-                .concat()
-                .into_iter()
-                .map(|genre| {
-                    db.genre().upsert(
-                        prisma::genre::id::equals(genre.id.clone()),
-                        (genre.id.clone(), genre.name, vec![]),
-                        vec![],
-                    )
-                })
-                .collect::<Vec<_>>(),
-                // upsert ProductUserGenre
-                data.reviewer_genre
-                    .iter()
-                    .map(|genre| {
-                        db.product_user_genre().create(
-                            genre.1.try_into().unwrap(),
-                            prisma::product::id::equals(data.id.clone()),
-                            prisma::genre::id::equals(genre.0.id.clone()),
-                            vec![prisma::product_user_genre::vote_count::set(
-                                genre.1.try_into().unwrap(),
-                            )],
-                        )
-                    })
-                    .collect::<Vec<_>>(),
-                // create products
-                db.product().create(
-                    data.id.clone(),
-                    data.title,
-                    prisma::circle::id::equals(data.circle.id),
-                    data.price.try_into().unwrap(),
-                    data.sale_count.try_into().unwrap(),
-                    data.age_rating.into(),
-                    chrono::FixedOffset::east_opt(9 * 3600)
-                        .unwrap()
-                        .from_local_datetime(&data.released_at.and_hms_opt(0, 0, 0).unwrap())
+    let tasks = metadata.into_iter().map(|(metadata, path)| async move {
+        let mut client = pool.get().await?;
+        client.transaction().await?;
+        insert_product().params(
+            &client,
+            &InsertProductParams {
+                id: metadata.id,
+                name: metadata.title,
+                description: None::<&str>,
+                series: None::<&str>,
+                circle_id: metadata.circle.id,
+                actor: metadata.people.voice_actor.unwrap_or_default(),
+                author: metadata.people.author.unwrap_or_default(),
+                illustrator: metadata.people.illustrator.unwrap_or_default(),
+                price: metadata.price.try_into().unwrap(),
+                sale_count: metadata.sale_count.try_into().unwrap(),
+                age: metadata.age_rating.into(),
+                // convert chrono date to "time" crate date
+                released_at: time::Date::from_calendar_date(
+                    metadata.released_at.year(),
+                    time::Month::try_from(u8::try_from(metadata.released_at.month()).unwrap())
                         .unwrap(),
-                    data.rate_count.unwrap_or(0).try_into().unwrap(),
-                    data.review_count.unwrap_or(0).try_into().unwrap(),
-                    path.to_string_lossy().to_string(),
-                    vec![
-                        prisma::product::actor::set(data.people.voice_actor.unwrap_or_default()),
-                        prisma::product::illustrator::set(
-                            data.people.illustrator.unwrap_or_default(),
-                        ),
-                        prisma::product::author::set(data.people.author.unwrap_or_default()),
-                        prisma::product::rating::set(data.rating),
-                    ],
-                ),
-            )
-        })
-        .collect::<Vec<_>>();
+                    metadata.released_at.day().try_into().unwrap(),
+                )
+                .unwrap(),
+                rating: metadata.rating,
+                rating_count: metadata.rate_count.unwrap_or(0).try_into().unwrap(),
+                comment_count: metadata.review_count.unwrap_or(0).try_into().unwrap(),
+                path: path.to_string_lossy(),
+            },
+        );
 
-    let res = db._batch(batch).await.map_err(|e| {
-        error!("Failed to save metadata to database: {}", e);
-        e
-    })?;
+        client.commit().await?;
+
+        Ok::<(), anyhow::Error>(())
+    });
+
+    let res = futures::future::join_all(tasks).await;
 
     info!("Scan finished");
 
     Ok(())
 }
 
-impl From<dlsite::product::AgeRating> for prisma::ProductAge {
-    fn from(age: dlsite::product::AgeRating) -> Self {
-        match age {
-            dlsite::product::AgeRating::AllAges => prisma::ProductAge::AllAge,
-            dlsite::product::AgeRating::Adult => prisma::ProductAge::Adult,
-            dlsite::product::AgeRating::R => prisma::ProductAge::RRated,
+impl From<dlsite::product::AgeRating> for Age {
+    fn from(value: dlsite::product::AgeRating) -> Self {
+        use dlsite::product::AgeRating;
+        match value {
+            AgeRating::AllAges => Age::all_ages,
+            AgeRating::R => Age::r,
+            AgeRating::Adult => Age::adult,
         }
     }
 }
