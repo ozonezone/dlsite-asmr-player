@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-use chrono::{Datelike, TimeZone};
+use chrono::Datelike;
 use cornucopia_async::Params;
 use deadpool_postgres::Pool;
 use futures::stream::StreamExt;
@@ -11,9 +11,9 @@ use walkdir::WalkDir;
 
 use crate::cornucopia::{
     queries::scan::{
-        exist_product, insert_product, insert_product_genre, upsert_circle, upsert_genre,
-        upsert_product_usergenre, InsertProductGenreParams, InsertProductParams,
-        UpsertCircleParams, UpsertGenreParams, UpsertProductUsergenreParams,
+        exist_product, insert_product_genre, upsert_circle, upsert_genre, upsert_product,
+        upsert_product_usergenre, InsertProductGenreParams, UpsertCircleParams, UpsertGenreParams,
+        UpsertProductParams, UpsertProductUsergenreParams,
     },
     types::public::Age,
 };
@@ -59,6 +59,9 @@ async fn scan_rj_folder(paths: &Vec<PathBuf>) -> Vec<(String, PathBuf)> {
 /// * `force` - Force fetch metadata for each RJ folder even if the metadata already exists in db.
 pub async fn scan(folders: &Vec<PathBuf>, force: bool, pool: &Pool) -> anyhow::Result<()> {
     info!("Starting scan");
+    if force {
+        info!("Force scan enabled. Data will be overwritten.");
+    }
 
     let client = pool.get().await?;
 
@@ -133,15 +136,20 @@ pub async fn scan(folders: &Vec<PathBuf>, force: bool, pool: &Pool) -> anyhow::R
             )
             .await?;
 
-        insert_product()
+        upsert_product()
             .params(
                 &transaction,
-                &InsertProductParams {
+                &UpsertProductParams {
                     id: metadata.id.clone(),
                     name: metadata.title,
                     description: None::<&str>,
-                    series: None::<&str>,
+                    series: metadata.series,
                     circle_id: metadata.circle.id,
+                    remote_image: metadata
+                        .images
+                        .iter()
+                        .map(|i| i.to_string())
+                        .collect::<Vec<_>>(),
                     actor: metadata.people.voice_actor.unwrap_or_default(),
                     author: metadata.people.author.unwrap_or_default(),
                     illustrator: metadata.people.illustrator.unwrap_or_default(),

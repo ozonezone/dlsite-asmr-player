@@ -100,28 +100,31 @@ pub mod queries {
         use futures;
         use futures::{StreamExt, TryStreamExt};
         #[derive(Debug)]
-        pub struct InsertProductParams<
+        pub struct UpsertProductParams<
             T1: cornucopia_async::StringSql,
             T2: cornucopia_async::StringSql,
             T3: cornucopia_async::StringSql,
             T4: cornucopia_async::StringSql,
-            T5: cornucopia_async::StringSql,
+            T5: cornucopia_async::ArraySql<Item = T4>,
             T6: cornucopia_async::StringSql,
-            T7: cornucopia_async::ArraySql<Item = T6>,
+            T7: cornucopia_async::StringSql,
             T8: cornucopia_async::StringSql,
             T9: cornucopia_async::ArraySql<Item = T8>,
             T10: cornucopia_async::StringSql,
             T11: cornucopia_async::ArraySql<Item = T10>,
             T12: cornucopia_async::StringSql,
+            T13: cornucopia_async::ArraySql<Item = T12>,
+            T14: cornucopia_async::StringSql,
         > {
             pub id: T1,
             pub name: T2,
             pub description: Option<T3>,
-            pub series: Option<T4>,
-            pub circle_id: T5,
-            pub actor: T7,
-            pub author: T9,
-            pub illustrator: T11,
+            pub remote_image: T5,
+            pub series: Option<T6>,
+            pub circle_id: T7,
+            pub actor: T9,
+            pub author: T11,
+            pub illustrator: T13,
             pub price: i32,
             pub sale_count: i32,
             pub age: super::super::types::public::Age,
@@ -129,7 +132,7 @@ pub mod queries {
             pub rating: Option<f64>,
             pub rating_count: i32,
             pub comment_count: i32,
-            pub path: T12,
+            pub path: T14,
         }
         #[derive(Debug)]
         pub struct UpsertCircleParams<
@@ -242,12 +245,29 @@ pub mod queries {
                 }
             }
         }
-        pub fn insert_product() -> InsertProductStmt {
-            InsertProductStmt(cornucopia_async :: private :: Stmt :: new("INSERT INTO product(id, name, description, series, circle_id, actor, author, illustrator, price, sale_count, age, released_at, rating, rating_count, comment_count, path) 
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)"))
+        pub fn upsert_product() -> UpsertProductStmt {
+            UpsertProductStmt(cornucopia_async :: private :: Stmt :: new("INSERT INTO product(id, name, description, remote_image, series, circle_id, actor, author, illustrator, price, sale_count, age, released_at, rating, rating_count, comment_count, path) 
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
+ON CONFLICT (id) DO UPDATE SET
+  name = EXCLUDED.name,
+  description = EXCLUDED.description,
+  series = EXCLUDED.series,
+  remote_image = EXCLUDED.remote_image,
+  circle_id = EXCLUDED.circle_id,
+  actor = EXCLUDED.actor,
+  author = EXCLUDED.author,
+  illustrator = EXCLUDED.illustrator,
+  price = EXCLUDED.price,
+  sale_count = EXCLUDED.sale_count,
+  age = EXCLUDED.age,
+  released_at = EXCLUDED.released_at,
+  rating = EXCLUDED.rating,
+  rating_count = EXCLUDED.rating_count,
+  comment_count = EXCLUDED.comment_count,
+  path = EXCLUDED.path"))
         }
-        pub struct InsertProductStmt(cornucopia_async::private::Stmt);
-        impl InsertProductStmt {
+        pub struct UpsertProductStmt(cornucopia_async::private::Stmt);
+        impl UpsertProductStmt {
             pub async fn bind<
                 'a,
                 C: GenericClient,
@@ -255,25 +275,28 @@ VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)")
                 T2: cornucopia_async::StringSql,
                 T3: cornucopia_async::StringSql,
                 T4: cornucopia_async::StringSql,
-                T5: cornucopia_async::StringSql,
+                T5: cornucopia_async::ArraySql<Item = T4>,
                 T6: cornucopia_async::StringSql,
-                T7: cornucopia_async::ArraySql<Item = T6>,
+                T7: cornucopia_async::StringSql,
                 T8: cornucopia_async::StringSql,
                 T9: cornucopia_async::ArraySql<Item = T8>,
                 T10: cornucopia_async::StringSql,
                 T11: cornucopia_async::ArraySql<Item = T10>,
                 T12: cornucopia_async::StringSql,
+                T13: cornucopia_async::ArraySql<Item = T12>,
+                T14: cornucopia_async::StringSql,
             >(
                 &'a mut self,
                 client: &'a C,
                 id: &'a T1,
                 name: &'a T2,
                 description: &'a Option<T3>,
-                series: &'a Option<T4>,
-                circle_id: &'a T5,
-                actor: &'a T7,
-                author: &'a T9,
-                illustrator: &'a T11,
+                remote_image: &'a T5,
+                series: &'a Option<T6>,
+                circle_id: &'a T7,
+                actor: &'a T9,
+                author: &'a T11,
+                illustrator: &'a T13,
                 price: &'a i32,
                 sale_count: &'a i32,
                 age: &'a super::super::types::public::Age,
@@ -281,7 +304,7 @@ VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)")
                 rating: &'a Option<f64>,
                 rating_count: &'a i32,
                 comment_count: &'a i32,
-                path: &'a T12,
+                path: &'a T14,
             ) -> Result<u64, tokio_postgres::Error> {
                 let stmt = self.0.prepare(client).await?;
                 client
@@ -291,6 +314,7 @@ VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)")
                             id,
                             name,
                             description,
+                            remote_image,
                             series,
                             circle_id,
                             actor,
@@ -316,18 +340,20 @@ VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)")
                 T2: cornucopia_async::StringSql,
                 T3: cornucopia_async::StringSql,
                 T4: cornucopia_async::StringSql,
-                T5: cornucopia_async::StringSql,
+                T5: cornucopia_async::ArraySql<Item = T4>,
                 T6: cornucopia_async::StringSql,
-                T7: cornucopia_async::ArraySql<Item = T6>,
+                T7: cornucopia_async::StringSql,
                 T8: cornucopia_async::StringSql,
                 T9: cornucopia_async::ArraySql<Item = T8>,
                 T10: cornucopia_async::StringSql,
                 T11: cornucopia_async::ArraySql<Item = T10>,
                 T12: cornucopia_async::StringSql,
+                T13: cornucopia_async::ArraySql<Item = T12>,
+                T14: cornucopia_async::StringSql,
             >
             cornucopia_async::Params<
                 'a,
-                InsertProductParams<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12>,
+                UpsertProductParams<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14>,
                 std::pin::Pin<
                     Box<
                         dyn futures::Future<Output = Result<u64, tokio_postgres::Error>>
@@ -336,12 +362,27 @@ VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)")
                     >,
                 >,
                 C,
-            > for InsertProductStmt
+            > for UpsertProductStmt
         {
             fn params(
                 &'a mut self,
                 client: &'a C,
-                params: &'a InsertProductParams<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12>,
+                params: &'a UpsertProductParams<
+                    T1,
+                    T2,
+                    T3,
+                    T4,
+                    T5,
+                    T6,
+                    T7,
+                    T8,
+                    T9,
+                    T10,
+                    T11,
+                    T12,
+                    T13,
+                    T14,
+                >,
             ) -> std::pin::Pin<
                 Box<dyn futures::Future<Output = Result<u64, tokio_postgres::Error>> + Send + 'a>,
             > {
@@ -350,6 +391,7 @@ VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)")
                     &params.id,
                     &params.name,
                     &params.description,
+                    &params.remote_image,
                     &params.series,
                     &params.circle_id,
                     &params.actor,

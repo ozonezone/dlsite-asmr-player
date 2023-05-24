@@ -72,6 +72,10 @@ table "product" {
     null = false
     type = text
   }
+  column "remote_image" {
+    null = false
+    type = sql("text[]")
+  }
   primary_key {
     columns = [column.id]
   }

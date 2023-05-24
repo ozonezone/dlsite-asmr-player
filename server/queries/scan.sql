@@ -1,9 +1,26 @@
 --! exist_product
 SELECT id FROM product WHERE id = ANY(:ids);
 
---! insert_product(description?,series?,rating?)
-INSERT INTO product(id, name, description, series, circle_id, actor, author, illustrator, price, sale_count, age, released_at, rating, rating_count, comment_count, path) 
-VALUES (:id, :name, :description, :series, :circle_id, :actor, :author, :illustrator, :price, :sale_count, :age, :released_at, :rating, :rating_count, :comment_count, :path);
+--! upsert_product(description?,series?,rating?)
+INSERT INTO product(id, name, description, remote_image, series, circle_id, actor, author, illustrator, price, sale_count, age, released_at, rating, rating_count, comment_count, path) 
+VALUES (:id, :name, :description, :remote_image, :series, :circle_id, :actor, :author, :illustrator, :price, :sale_count, :age, :released_at, :rating, :rating_count, :comment_count, :path)
+ON CONFLICT (id) DO UPDATE SET
+  name = EXCLUDED.name,
+  description = EXCLUDED.description,
+  series = EXCLUDED.series,
+  remote_image = EXCLUDED.remote_image,
+  circle_id = EXCLUDED.circle_id,
+  actor = EXCLUDED.actor,
+  author = EXCLUDED.author,
+  illustrator = EXCLUDED.illustrator,
+  price = EXCLUDED.price,
+  sale_count = EXCLUDED.sale_count,
+  age = EXCLUDED.age,
+  released_at = EXCLUDED.released_at,
+  rating = EXCLUDED.rating,
+  rating_count = EXCLUDED.rating_count,
+  comment_count = EXCLUDED.comment_count,
+  path = EXCLUDED.path;
 
 --! upsert_circle
 INSERT INTO circle(id, name)
