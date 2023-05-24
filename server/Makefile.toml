@@ -1,0 +1,29 @@
+[config]
+default_to_workspace = false
+
+[tasks.dev-backend]
+script = "cargo watch -- cargo run"
+
+[tasks.dev-frontend]
+script = "cd ../client && pnpm dev"
+
+[tasks.dev-server]
+run_task = { name = ["dev-frontend", "dev-backend"], parallel = true }
+
+[tasks.dev-start-db]
+script = "docker-compose up -d"
+
+[tasks.dev]
+run_task = { name = ["dev-start-db", "dev-server"], parallel = false }
+
+[tasks.generate-query]
+script = """
+cornucopia live "postgresql://sample:password@localhost:5432/db"
+rustfmt --edition 2021 ./src/cornucopia.rs
+"""
+
+[tasks.migrate]
+script = """
+atlas schema apply --url "postgresql://sample:password@localhost:5432/db?sslmode=disable" --to "file://schema.hcl"
+"""
+dependencies = ["dev-start-db"]

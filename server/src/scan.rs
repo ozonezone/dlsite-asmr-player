@@ -10,7 +10,11 @@ use tracing::{error, info, warn};
 use walkdir::WalkDir;
 
 use crate::cornucopia::{
-    queries::insert_product::{exist_product, insert_product, InsertProductParams},
+    queries::scan::{
+        exist_product, insert_product, insert_product_genre, upsert_circle, upsert_genre,
+        upsert_product_usergenre, InsertProductGenreParams, InsertProductParams,
+        UpsertCircleParams, UpsertGenreParams, UpsertProductUsergenreParams,
+    },
     types::public::Age,
 };
 
@@ -111,45 +115,121 @@ pub async fn scan(folders: &Vec<PathBuf>, force: bool, pool: &Pool) -> anyhow::R
     info!("Fetched metadata for {} RJ folders", metadata.len());
 
     let tasks = metadata.into_iter().map(|(metadata, path)| async move {
-        let mut client = pool.get().await?;
-        client.transaction().await?;
-        insert_product().params(
-            &client,
-            &InsertProductParams {
-                id: metadata.id,
-                name: metadata.title,
-                description: None::<&str>,
-                series: None::<&str>,
-                circle_id: metadata.circle.id,
-                actor: metadata.people.voice_actor.unwrap_or_default(),
-                author: metadata.people.author.unwrap_or_default(),
-                illustrator: metadata.people.illustrator.unwrap_or_default(),
-                price: metadata.price.try_into().unwrap(),
-                sale_count: metadata.sale_count.try_into().unwrap(),
-                age: metadata.age_rating.into(),
-                // convert chrono date to "time" crate date
-                released_at: time::Date::from_calendar_date(
-                    metadata.released_at.year(),
-                    time::Month::try_from(u8::try_from(metadata.released_at.month()).unwrap())
-                        .unwrap(),
-                    metadata.released_at.day().try_into().unwrap(),
-                )
-                .unwrap(),
-                rating: metadata.rating,
-                rating_count: metadata.rate_count.unwrap_or(0).try_into().unwrap(),
-                comment_count: metadata.review_count.unwrap_or(0).try_into().unwrap(),
-                path: path.to_string_lossy(),
-            },
-        );
+        let mut client = pool.get().await.map_err(|e| {
+            error!("Could not get client from pool");
+            e
+        })?;
+        let transaction = client.transaction().await.map_err(|e| {
+            error!("Could not start transaction");
+            e
+        })?;
+        upsert_circle()
+            .params(
+                &transaction,
+                &UpsertCircleParams {
+                    id: metadata.circle.id.clone(),
+                    name: metadata.circle.name,
+                },
+            )
+            .await?;
 
-        client.commit().await?;
+        insert_product()
+            .params(
+                &transaction,
+                &InsertProductParams {
+                    id: metadata.id.clone(),
+                    name: metadata.title,
+                    description: None::<&str>,
+                    series: None::<&str>,
+                    circle_id: metadata.circle.id,
+                    actor: metadata.people.voice_actor.unwrap_or_default(),
+                    author: metadata.people.author.unwrap_or_default(),
+                    illustrator: metadata.people.illustrator.unwrap_or_default(),
+                    price: metadata.price.try_into().unwrap(),
+                    sale_count: metadata.sale_count.try_into().unwrap(),
+                    age: metadata.age_rating.into(),
+                    // convert chrono date to "time" crate date
+                    released_at: time::Date::from_calendar_date(
+                        metadata.released_at.year(),
+                        time::Month::try_from(u8::try_from(metadata.released_at.month()).unwrap())
+                            .unwrap(),
+                        metadata.released_at.day().try_into().unwrap(),
+                    )
+                    .unwrap(),
+                    rating: metadata.rating,
+                    rating_count: metadata.rate_count.unwrap_or(0).try_into().unwrap(),
+                    comment_count: metadata.review_count.unwrap_or(0).try_into().unwrap(),
+                    path: path.to_string_lossy(),
+                },
+            )
+            .await?;
+
+        for genre in metadata.genre {
+            upsert_genre()
+                .params(
+                    &transaction,
+                    &UpsertGenreParams {
+                        id: genre.id.clone(),
+                        name: genre.name.clone(),
+                    },
+                )
+                .await?;
+            insert_product_genre()
+                .params(
+                    &transaction,
+                    &InsertProductGenreParams {
+                        product_id: metadata.id.clone(),
+                        genre_id: genre.id,
+                    },
+                )
+                .await?;
+        }
+
+        for (genre, count) in metadata.reviewer_genre {
+            upsert_genre()
+                .params(
+                    &transaction,
+                    &UpsertGenreParams {
+                        id: genre.id.clone(),
+                        name: genre.name.clone(),
+                    },
+                )
+                .await?;
+            upsert_product_usergenre()
+                .params(
+                    &transaction,
+                    &UpsertProductUsergenreParams {
+                        product_id: metadata.id.clone(),
+                        genre_id: genre.id.clone(),
+                        count: i32::try_from(count).unwrap(),
+                    },
+                )
+                .await?;
+        }
+
+        transaction.commit().await.map_err(|e| {
+            error!("Could not commit transaction: {}", e);
+            e
+        })?;
 
         Ok::<(), anyhow::Error>(())
     });
 
     let res = futures::future::join_all(tasks).await;
 
-    info!("Scan finished");
+    let succeed_task_count = res
+        .iter()
+        .filter(|res| {
+            if let Err(err) = res {
+                error!("Failed to insert product: {}", err);
+                false
+            } else {
+                true
+            }
+        })
+        .count();
+
+    info!("Scan finished. {} tasks succeed", succeed_task_count);
 
     Ok(())
 }

@@ -95,7 +95,7 @@ pub mod types {
 #[allow(unused_imports)]
 #[allow(dead_code)]
 pub mod queries {
-    pub mod insert_product {
+    pub mod scan {
         use cornucopia_async::GenericClient;
         use futures;
         use futures::{StreamExt, TryStreamExt};
@@ -130,6 +130,39 @@ pub mod queries {
             pub rating_count: i32,
             pub comment_count: i32,
             pub path: T12,
+        }
+        #[derive(Debug)]
+        pub struct UpsertCircleParams<
+            T1: cornucopia_async::StringSql,
+            T2: cornucopia_async::StringSql,
+        > {
+            pub id: T1,
+            pub name: T2,
+        }
+        #[derive(Debug)]
+        pub struct UpsertGenreParams<
+            T1: cornucopia_async::StringSql,
+            T2: cornucopia_async::StringSql,
+        > {
+            pub id: T1,
+            pub name: T2,
+        }
+        #[derive(Debug)]
+        pub struct InsertProductGenreParams<
+            T1: cornucopia_async::StringSql,
+            T2: cornucopia_async::StringSql,
+        > {
+            pub product_id: T1,
+            pub genre_id: T2,
+        }
+        #[derive(Debug)]
+        pub struct UpsertProductUsergenreParams<
+            T1: cornucopia_async::StringSql,
+            T2: cornucopia_async::StringSql,
+        > {
+            pub product_id: T1,
+            pub genre_id: T2,
+            pub count: i32,
         }
         pub struct StringQuery<'a, C: GenericClient, T, const N: usize> {
             client: &'a C,
@@ -331,6 +364,219 @@ VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)")
                     &params.comment_count,
                     &params.path,
                 ))
+            }
+        }
+        pub fn upsert_circle() -> UpsertCircleStmt {
+            UpsertCircleStmt(cornucopia_async::private::Stmt::new(
+                "INSERT INTO circle(id, name)
+VALUES ($1, $2)
+ON CONFLICT (id) DO UPDATE SET name = $2",
+            ))
+        }
+        pub struct UpsertCircleStmt(cornucopia_async::private::Stmt);
+        impl UpsertCircleStmt {
+            pub async fn bind<
+                'a,
+                C: GenericClient,
+                T1: cornucopia_async::StringSql,
+                T2: cornucopia_async::StringSql,
+            >(
+                &'a mut self,
+                client: &'a C,
+                id: &'a T1,
+                name: &'a T2,
+            ) -> Result<u64, tokio_postgres::Error> {
+                let stmt = self.0.prepare(client).await?;
+                client.execute(stmt, &[id, name]).await
+            }
+        }
+        impl<
+                'a,
+                C: GenericClient + Send + Sync,
+                T1: cornucopia_async::StringSql,
+                T2: cornucopia_async::StringSql,
+            >
+            cornucopia_async::Params<
+                'a,
+                UpsertCircleParams<T1, T2>,
+                std::pin::Pin<
+                    Box<
+                        dyn futures::Future<Output = Result<u64, tokio_postgres::Error>>
+                            + Send
+                            + 'a,
+                    >,
+                >,
+                C,
+            > for UpsertCircleStmt
+        {
+            fn params(
+                &'a mut self,
+                client: &'a C,
+                params: &'a UpsertCircleParams<T1, T2>,
+            ) -> std::pin::Pin<
+                Box<dyn futures::Future<Output = Result<u64, tokio_postgres::Error>> + Send + 'a>,
+            > {
+                Box::pin(self.bind(client, &params.id, &params.name))
+            }
+        }
+        pub fn upsert_genre() -> UpsertGenreStmt {
+            UpsertGenreStmt(cornucopia_async::private::Stmt::new(
+                "INSERT INTO genre(id, name)
+VALUES ($1, $2)
+ON CONFLICT (id) DO UPDATE SET name = $2",
+            ))
+        }
+        pub struct UpsertGenreStmt(cornucopia_async::private::Stmt);
+        impl UpsertGenreStmt {
+            pub async fn bind<
+                'a,
+                C: GenericClient,
+                T1: cornucopia_async::StringSql,
+                T2: cornucopia_async::StringSql,
+            >(
+                &'a mut self,
+                client: &'a C,
+                id: &'a T1,
+                name: &'a T2,
+            ) -> Result<u64, tokio_postgres::Error> {
+                let stmt = self.0.prepare(client).await?;
+                client.execute(stmt, &[id, name]).await
+            }
+        }
+        impl<
+                'a,
+                C: GenericClient + Send + Sync,
+                T1: cornucopia_async::StringSql,
+                T2: cornucopia_async::StringSql,
+            >
+            cornucopia_async::Params<
+                'a,
+                UpsertGenreParams<T1, T2>,
+                std::pin::Pin<
+                    Box<
+                        dyn futures::Future<Output = Result<u64, tokio_postgres::Error>>
+                            + Send
+                            + 'a,
+                    >,
+                >,
+                C,
+            > for UpsertGenreStmt
+        {
+            fn params(
+                &'a mut self,
+                client: &'a C,
+                params: &'a UpsertGenreParams<T1, T2>,
+            ) -> std::pin::Pin<
+                Box<dyn futures::Future<Output = Result<u64, tokio_postgres::Error>> + Send + 'a>,
+            > {
+                Box::pin(self.bind(client, &params.id, &params.name))
+            }
+        }
+        pub fn insert_product_genre() -> InsertProductGenreStmt {
+            InsertProductGenreStmt(cornucopia_async::private::Stmt::new(
+                "INSERT INTO product_genre(product_id, genre_id)
+VALUES ($1, $2)
+ON CONFLICT (product_id, genre_id) DO NOTHING",
+            ))
+        }
+        pub struct InsertProductGenreStmt(cornucopia_async::private::Stmt);
+        impl InsertProductGenreStmt {
+            pub async fn bind<
+                'a,
+                C: GenericClient,
+                T1: cornucopia_async::StringSql,
+                T2: cornucopia_async::StringSql,
+            >(
+                &'a mut self,
+                client: &'a C,
+                product_id: &'a T1,
+                genre_id: &'a T2,
+            ) -> Result<u64, tokio_postgres::Error> {
+                let stmt = self.0.prepare(client).await?;
+                client.execute(stmt, &[product_id, genre_id]).await
+            }
+        }
+        impl<
+                'a,
+                C: GenericClient + Send + Sync,
+                T1: cornucopia_async::StringSql,
+                T2: cornucopia_async::StringSql,
+            >
+            cornucopia_async::Params<
+                'a,
+                InsertProductGenreParams<T1, T2>,
+                std::pin::Pin<
+                    Box<
+                        dyn futures::Future<Output = Result<u64, tokio_postgres::Error>>
+                            + Send
+                            + 'a,
+                    >,
+                >,
+                C,
+            > for InsertProductGenreStmt
+        {
+            fn params(
+                &'a mut self,
+                client: &'a C,
+                params: &'a InsertProductGenreParams<T1, T2>,
+            ) -> std::pin::Pin<
+                Box<dyn futures::Future<Output = Result<u64, tokio_postgres::Error>> + Send + 'a>,
+            > {
+                Box::pin(self.bind(client, &params.product_id, &params.genre_id))
+            }
+        }
+        pub fn upsert_product_usergenre() -> UpsertProductUsergenreStmt {
+            UpsertProductUsergenreStmt(cornucopia_async::private::Stmt::new(
+                "INSERT INTO product_usergenre(product_id, genre_id, count)
+VALUES ($1, $2, $3)
+ON CONFLICT (product_id, genre_id) DO UPDATE SET count = $3",
+            ))
+        }
+        pub struct UpsertProductUsergenreStmt(cornucopia_async::private::Stmt);
+        impl UpsertProductUsergenreStmt {
+            pub async fn bind<
+                'a,
+                C: GenericClient,
+                T1: cornucopia_async::StringSql,
+                T2: cornucopia_async::StringSql,
+            >(
+                &'a mut self,
+                client: &'a C,
+                product_id: &'a T1,
+                genre_id: &'a T2,
+                count: &'a i32,
+            ) -> Result<u64, tokio_postgres::Error> {
+                let stmt = self.0.prepare(client).await?;
+                client.execute(stmt, &[product_id, genre_id, count]).await
+            }
+        }
+        impl<
+                'a,
+                C: GenericClient + Send + Sync,
+                T1: cornucopia_async::StringSql,
+                T2: cornucopia_async::StringSql,
+            >
+            cornucopia_async::Params<
+                'a,
+                UpsertProductUsergenreParams<T1, T2>,
+                std::pin::Pin<
+                    Box<
+                        dyn futures::Future<Output = Result<u64, tokio_postgres::Error>>
+                            + Send
+                            + 'a,
+                    >,
+                >,
+                C,
+            > for UpsertProductUsergenreStmt
+        {
+            fn params(
+                &'a mut self,
+                client: &'a C,
+                params: &'a UpsertProductUsergenreParams<T1, T2>,
+            ) -> std::pin::Pin<
+                Box<dyn futures::Future<Output = Result<u64, tokio_postgres::Error>> + Send + 'a>,
+            > {
+                Box::pin(self.bind(client, &params.product_id, &params.genre_id, &params.count))
             }
         }
     }
