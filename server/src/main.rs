@@ -32,7 +32,7 @@ async fn main() -> Result<()> {
             let config = Config::default();
             let config_path = config.write_to_file().await?;
             let config_path = config_path.to_str().unwrap_or("");
-            info!("Config file created: {}", config_path);
+            info!("Config file created to: {}", config_path);
             config
         }
     };
@@ -40,14 +40,9 @@ async fn main() -> Result<()> {
     let config = Arc::new(RwLock::new(config));
 
     let pool = pool::create_pool().await.unwrap();
-    let mut client = pool.get().await.unwrap();
 
     let router = router::mount();
-    let scan_status = Arc::new(RwLock::new(router::ScanStatus {
-        is_scanning: false,
-        current: None,
-        total: None,
-    }));
+    let scan_status = Arc::new(RwLock::new(router::ScanStatus { is_scanning: false }));
 
     let app = axum::Router::new().nest(
         "/rspc",

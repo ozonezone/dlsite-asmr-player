@@ -153,8 +153,8 @@ pub async fn scan(folders: &Vec<PathBuf>, force: bool, pool: &Pool) -> anyhow::R
                     actor: metadata.people.voice_actor.unwrap_or_default(),
                     author: metadata.people.author.unwrap_or_default(),
                     illustrator: metadata.people.illustrator.unwrap_or_default(),
-                    price: metadata.price.try_into().unwrap(),
-                    sale_count: metadata.sale_count.try_into().unwrap(),
+                    price: metadata.price,
+                    sale_count: metadata.sale_count,
                     age: metadata.age_rating.into(),
                     // convert chrono date to "time" crate date
                     released_at: time::Date::from_calendar_date(
@@ -165,8 +165,8 @@ pub async fn scan(folders: &Vec<PathBuf>, force: bool, pool: &Pool) -> anyhow::R
                     )
                     .unwrap(),
                     rating: metadata.rating,
-                    rating_count: metadata.rate_count.unwrap_or(0).try_into().unwrap(),
-                    comment_count: metadata.review_count.unwrap_or(0).try_into().unwrap(),
+                    rating_count: metadata.rate_count.unwrap_or(0),
+                    comment_count: metadata.review_count.unwrap_or(0),
                     path: path.to_string_lossy(),
                 },
             )
@@ -209,7 +209,7 @@ pub async fn scan(folders: &Vec<PathBuf>, force: bool, pool: &Pool) -> anyhow::R
                     &UpsertProductUsergenreParams {
                         product_id: metadata.id.clone(),
                         genre_id: genre.id.clone(),
-                        count: i32::try_from(count).unwrap(),
+                        count,
                     },
                 )
                 .await?;
@@ -237,7 +237,7 @@ pub async fn scan(folders: &Vec<PathBuf>, force: bool, pool: &Pool) -> anyhow::R
         })
         .count();
 
-    info!("Scan finished. {} tasks succeed", succeed_task_count);
+    info!("Scan finished. {} products updated", succeed_task_count);
 
     Ok(())
 }

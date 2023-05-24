@@ -22,8 +22,6 @@ pub(crate) struct RouterContext {
 #[derive(Debug, Clone)]
 pub(crate) struct ScanStatus {
     pub is_scanning: bool,
-    pub current: Option<String>,
-    pub total: Option<String>,
 }
 
 pub(crate) fn mount() -> Arc<Router<RouterContext>> {

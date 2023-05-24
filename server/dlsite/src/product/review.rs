@@ -18,7 +18,7 @@ pub struct ProductReview {
     pub error_msg: String,
     pub review_list: Vec<Review>,
     #[serde(deserialize_with = "deserialize_reviewer_genre")]
-    pub reviewer_genre_list: Option<Vec<(Genre, u32)>>,
+    pub reviewer_genre_list: Option<Vec<(Genre, i32)>>,
 }
 
 #[derive(Default, Debug, Clone, Deserialize)]
@@ -72,7 +72,7 @@ where
 
 fn deserialize_reviewer_genre<'de, D>(
     deserializer: D,
-) -> std::result::Result<Option<Vec<(Genre, u32)>>, D::Error>
+) -> std::result::Result<Option<Vec<(Genre, i32)>>, D::Error>
 where
     D: Deserializer<'de>,
 {

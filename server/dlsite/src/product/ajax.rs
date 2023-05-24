@@ -11,13 +11,13 @@ use super::WorkType;
 pub struct ProductAjax {
     pub maker_id: String,
     #[serde(deserialize_with = "serde_aux::prelude::deserialize_number_from_string")]
-    pub dl_count: u64,
+    pub dl_count: i32,
     #[serde(deserialize_with = "serde_aux::prelude::deserialize_option_number_from_string")]
-    pub review_count: Option<u64>,
+    pub review_count: Option<i32>,
     pub rate_average_2dp: Option<f64>,
-    pub rate_count: Option<u64>,
+    pub rate_count: Option<i32>,
     pub work_name: String,
-    pub price: u64,
+    pub price: i32,
     #[serde(deserialize_with = "deserialize_work_type")]
     pub work_type: WorkType,
 }

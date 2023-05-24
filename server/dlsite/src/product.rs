@@ -26,15 +26,15 @@ pub struct Product {
     pub age_rating: AgeRating,
     pub genre: Vec<Genre>,
     pub circle: Circle,
-    pub price: u64,
+    pub price: i32,
     pub series: Option<String>,
-    pub sale_count: u64,
-    pub review_count: Option<u64>,
+    pub sale_count: i32,
+    pub review_count: Option<i32>,
     pub rating: Option<f64>,
-    pub rate_count: Option<u64>,
+    pub rate_count: Option<i32>,
     pub images: Vec<Url>,
     pub people: ProductPeople,
-    pub reviewer_genre: Vec<(Genre, u32)>,
+    pub reviewer_genre: Vec<(Genre, i32)>,
 }
 
 /// People who contributed to a product on DLsite.
