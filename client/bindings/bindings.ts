@@ -9,6 +9,7 @@ export type Procedures = {
     mutations: 
         { key: "config.setPassword", input: string, result: string } | 
         { key: "config.setScandir", input: string[], result: string } | 
+        { key: "product.get", input: never, result: null } | 
         { key: "scan.start", input: never, result: null },
     subscriptions: never
 };

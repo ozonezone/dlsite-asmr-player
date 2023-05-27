@@ -8,6 +8,7 @@ use tracing::info;
 use crate::config::Config;
 
 mod config;
+mod product;
 mod scan;
 
 type RouterBuilder = rspc::RouterBuilder<RouterContext>;
@@ -59,6 +60,7 @@ pub(crate) fn mount() -> Arc<Router<RouterContext>> {
         .query("ping_auth", |t| t(|_, _: ()| "authed!"))
         .merge("config.", config::mount())
         .merge("scan.", scan::mount())
+        .merge("product.", product::mount())
         .build()
         .arced()
 }

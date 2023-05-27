@@ -3,7 +3,7 @@ use crate::scan;
 use super::RouterBuilder;
 
 pub(crate) fn mount() -> RouterBuilder {
-    <RouterBuilder>::new().mutation("start", |t| {
+    <RouterBuilder>::new().mutation("get", |t| {
         t(|ctx, _: ()| async move {
             if ctx.scan_status.read().await.is_scanning {
                 return Err(rspc::Error::new(
