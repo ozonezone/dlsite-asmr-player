@@ -10,6 +10,7 @@ use crate::config::Config;
 mod config;
 mod product;
 mod scan;
+mod utils;
 
 type RouterBuilder = rspc::RouterBuilder<RouterContext>;
 
@@ -30,7 +31,7 @@ pub(crate) fn mount() -> Arc<Router<RouterContext>> {
         .set_ts_bindings_header("/* eslint-disable */")
         .export_ts_bindings(
             std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-                .join("../client/bindings/bindings.ts"),
+                .join("../client/src/bindings/bindings.ts"),
         );
 
     rspc::Router::<RouterContext>::new()

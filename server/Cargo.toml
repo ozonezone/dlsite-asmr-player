@@ -27,6 +27,7 @@ tokio-postgres = { version = "0.7.8", features = ["with-time-0_3"] }
 deadpool-postgres = "0.10.5"
 postgres-types = "0.2.5"
 time = "0.3.21"
+struct-convert = "1.2.7"
 
 [workspace]
 resolver = "2"

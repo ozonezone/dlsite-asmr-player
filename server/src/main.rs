@@ -16,6 +16,7 @@ use crate::{config::Config, router::RouterContext};
 
 mod config;
 mod cornucopia;
+mod db;
 mod pool;
 mod router;
 mod scan;
@@ -77,7 +78,7 @@ async fn main() -> Result<()> {
         }),
     );
 
-    let addr = "[::]:4000".parse::<std::net::SocketAddr>().unwrap(); // This listens on IPv6 and IPv4
+    let addr = "[::]:14567".parse::<std::net::SocketAddr>().unwrap(); // This listens on IPv6 and IPv4
     println!("listening on http://{}/rspc", addr);
     axum::Server::bind(&addr)
         .serve(app.into_make_service())

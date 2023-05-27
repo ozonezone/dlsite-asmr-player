@@ -190,6 +190,328 @@ ON CONFLICT (id) DO UPDATE SET name = $2",
             pub genre_id: T2,
             pub count: i32,
         }
+        #[derive(Debug, Clone, PartialEq)]
+        pub struct GetGenre {
+            pub product_id: String,
+            pub genre_id: String,
+            pub name: String,
+        }
+        pub struct GetGenreBorrowed<'a> {
+            pub product_id: &'a str,
+            pub genre_id: &'a str,
+            pub name: &'a str,
+        }
+        impl<'a> From<GetGenreBorrowed<'a>> for GetGenre {
+            fn from(
+                GetGenreBorrowed {
+                    product_id,
+                    genre_id,
+                    name,
+                }: GetGenreBorrowed<'a>,
+            ) -> Self {
+                Self {
+                    product_id: product_id.into(),
+                    genre_id: genre_id.into(),
+                    name: name.into(),
+                }
+            }
+        }
+        pub struct GetGenreQuery<'a, C: GenericClient, T, const N: usize> {
+            client: &'a C,
+            params: [&'a (dyn postgres_types::ToSql + Sync); N],
+            stmt: &'a mut cornucopia_async::private::Stmt,
+            extractor: fn(&tokio_postgres::Row) -> GetGenreBorrowed,
+            mapper: fn(GetGenreBorrowed) -> T,
+        }
+        impl<'a, C, T: 'a, const N: usize> GetGenreQuery<'a, C, T, N>
+        where
+            C: GenericClient,
+        {
+            pub fn map<R>(self, mapper: fn(GetGenreBorrowed) -> R) -> GetGenreQuery<'a, C, R, N> {
+                GetGenreQuery {
+                    client: self.client,
+                    params: self.params,
+                    stmt: self.stmt,
+                    extractor: self.extractor,
+                    mapper,
+                }
+            }
+            pub async fn one(self) -> Result<T, tokio_postgres::Error> {
+                let stmt = self.stmt.prepare(self.client).await?;
+                let row = self.client.query_one(stmt, &self.params).await?;
+                Ok((self.mapper)((self.extractor)(&row)))
+            }
+            pub async fn all(self) -> Result<Vec<T>, tokio_postgres::Error> {
+                self.iter().await?.try_collect().await
+            }
+            pub async fn opt(self) -> Result<Option<T>, tokio_postgres::Error> {
+                let stmt = self.stmt.prepare(self.client).await?;
+                Ok(self
+                    .client
+                    .query_opt(stmt, &self.params)
+                    .await?
+                    .map(|row| (self.mapper)((self.extractor)(&row))))
+            }
+            pub async fn iter(
+                self,
+            ) -> Result<
+                impl futures::Stream<Item = Result<T, tokio_postgres::Error>> + 'a,
+                tokio_postgres::Error,
+            > {
+                let stmt = self.stmt.prepare(self.client).await?;
+                let it = self
+                    .client
+                    .query_raw(stmt, cornucopia_async::private::slice_iter(&self.params))
+                    .await?
+                    .map(move |res| res.map(|row| (self.mapper)((self.extractor)(&row))))
+                    .into_stream();
+                Ok(it)
+            }
+        }
+        #[derive(Debug, Clone, PartialEq)]
+        pub struct GetGenres {
+            pub product_id: String,
+            pub genre_id: String,
+            pub name: String,
+        }
+        pub struct GetGenresBorrowed<'a> {
+            pub product_id: &'a str,
+            pub genre_id: &'a str,
+            pub name: &'a str,
+        }
+        impl<'a> From<GetGenresBorrowed<'a>> for GetGenres {
+            fn from(
+                GetGenresBorrowed {
+                    product_id,
+                    genre_id,
+                    name,
+                }: GetGenresBorrowed<'a>,
+            ) -> Self {
+                Self {
+                    product_id: product_id.into(),
+                    genre_id: genre_id.into(),
+                    name: name.into(),
+                }
+            }
+        }
+        pub struct GetGenresQuery<'a, C: GenericClient, T, const N: usize> {
+            client: &'a C,
+            params: [&'a (dyn postgres_types::ToSql + Sync); N],
+            stmt: &'a mut cornucopia_async::private::Stmt,
+            extractor: fn(&tokio_postgres::Row) -> GetGenresBorrowed,
+            mapper: fn(GetGenresBorrowed) -> T,
+        }
+        impl<'a, C, T: 'a, const N: usize> GetGenresQuery<'a, C, T, N>
+        where
+            C: GenericClient,
+        {
+            pub fn map<R>(self, mapper: fn(GetGenresBorrowed) -> R) -> GetGenresQuery<'a, C, R, N> {
+                GetGenresQuery {
+                    client: self.client,
+                    params: self.params,
+                    stmt: self.stmt,
+                    extractor: self.extractor,
+                    mapper,
+                }
+            }
+            pub async fn one(self) -> Result<T, tokio_postgres::Error> {
+                let stmt = self.stmt.prepare(self.client).await?;
+                let row = self.client.query_one(stmt, &self.params).await?;
+                Ok((self.mapper)((self.extractor)(&row)))
+            }
+            pub async fn all(self) -> Result<Vec<T>, tokio_postgres::Error> {
+                self.iter().await?.try_collect().await
+            }
+            pub async fn opt(self) -> Result<Option<T>, tokio_postgres::Error> {
+                let stmt = self.stmt.prepare(self.client).await?;
+                Ok(self
+                    .client
+                    .query_opt(stmt, &self.params)
+                    .await?
+                    .map(|row| (self.mapper)((self.extractor)(&row))))
+            }
+            pub async fn iter(
+                self,
+            ) -> Result<
+                impl futures::Stream<Item = Result<T, tokio_postgres::Error>> + 'a,
+                tokio_postgres::Error,
+            > {
+                let stmt = self.stmt.prepare(self.client).await?;
+                let it = self
+                    .client
+                    .query_raw(stmt, cornucopia_async::private::slice_iter(&self.params))
+                    .await?
+                    .map(move |res| res.map(|row| (self.mapper)((self.extractor)(&row))))
+                    .into_stream();
+                Ok(it)
+            }
+        }
+        #[derive(Debug, Clone, PartialEq)]
+        pub struct GetUsergenre {
+            pub product_id: String,
+            pub genre_id: String,
+            pub name: String,
+        }
+        pub struct GetUsergenreBorrowed<'a> {
+            pub product_id: &'a str,
+            pub genre_id: &'a str,
+            pub name: &'a str,
+        }
+        impl<'a> From<GetUsergenreBorrowed<'a>> for GetUsergenre {
+            fn from(
+                GetUsergenreBorrowed {
+                    product_id,
+                    genre_id,
+                    name,
+                }: GetUsergenreBorrowed<'a>,
+            ) -> Self {
+                Self {
+                    product_id: product_id.into(),
+                    genre_id: genre_id.into(),
+                    name: name.into(),
+                }
+            }
+        }
+        pub struct GetUsergenreQuery<'a, C: GenericClient, T, const N: usize> {
+            client: &'a C,
+            params: [&'a (dyn postgres_types::ToSql + Sync); N],
+            stmt: &'a mut cornucopia_async::private::Stmt,
+            extractor: fn(&tokio_postgres::Row) -> GetUsergenreBorrowed,
+            mapper: fn(GetUsergenreBorrowed) -> T,
+        }
+        impl<'a, C, T: 'a, const N: usize> GetUsergenreQuery<'a, C, T, N>
+        where
+            C: GenericClient,
+        {
+            pub fn map<R>(
+                self,
+                mapper: fn(GetUsergenreBorrowed) -> R,
+            ) -> GetUsergenreQuery<'a, C, R, N> {
+                GetUsergenreQuery {
+                    client: self.client,
+                    params: self.params,
+                    stmt: self.stmt,
+                    extractor: self.extractor,
+                    mapper,
+                }
+            }
+            pub async fn one(self) -> Result<T, tokio_postgres::Error> {
+                let stmt = self.stmt.prepare(self.client).await?;
+                let row = self.client.query_one(stmt, &self.params).await?;
+                Ok((self.mapper)((self.extractor)(&row)))
+            }
+            pub async fn all(self) -> Result<Vec<T>, tokio_postgres::Error> {
+                self.iter().await?.try_collect().await
+            }
+            pub async fn opt(self) -> Result<Option<T>, tokio_postgres::Error> {
+                let stmt = self.stmt.prepare(self.client).await?;
+                Ok(self
+                    .client
+                    .query_opt(stmt, &self.params)
+                    .await?
+                    .map(|row| (self.mapper)((self.extractor)(&row))))
+            }
+            pub async fn iter(
+                self,
+            ) -> Result<
+                impl futures::Stream<Item = Result<T, tokio_postgres::Error>> + 'a,
+                tokio_postgres::Error,
+            > {
+                let stmt = self.stmt.prepare(self.client).await?;
+                let it = self
+                    .client
+                    .query_raw(stmt, cornucopia_async::private::slice_iter(&self.params))
+                    .await?
+                    .map(move |res| res.map(|row| (self.mapper)((self.extractor)(&row))))
+                    .into_stream();
+                Ok(it)
+            }
+        }
+        #[derive(Debug, Clone, PartialEq)]
+        pub struct GetUsergenres {
+            pub product_id: String,
+            pub genre_id: String,
+            pub name: String,
+            pub count: i32,
+        }
+        pub struct GetUsergenresBorrowed<'a> {
+            pub product_id: &'a str,
+            pub genre_id: &'a str,
+            pub name: &'a str,
+            pub count: i32,
+        }
+        impl<'a> From<GetUsergenresBorrowed<'a>> for GetUsergenres {
+            fn from(
+                GetUsergenresBorrowed {
+                    product_id,
+                    genre_id,
+                    name,
+                    count,
+                }: GetUsergenresBorrowed<'a>,
+            ) -> Self {
+                Self {
+                    product_id: product_id.into(),
+                    genre_id: genre_id.into(),
+                    name: name.into(),
+                    count,
+                }
+            }
+        }
+        pub struct GetUsergenresQuery<'a, C: GenericClient, T, const N: usize> {
+            client: &'a C,
+            params: [&'a (dyn postgres_types::ToSql + Sync); N],
+            stmt: &'a mut cornucopia_async::private::Stmt,
+            extractor: fn(&tokio_postgres::Row) -> GetUsergenresBorrowed,
+            mapper: fn(GetUsergenresBorrowed) -> T,
+        }
+        impl<'a, C, T: 'a, const N: usize> GetUsergenresQuery<'a, C, T, N>
+        where
+            C: GenericClient,
+        {
+            pub fn map<R>(
+                self,
+                mapper: fn(GetUsergenresBorrowed) -> R,
+            ) -> GetUsergenresQuery<'a, C, R, N> {
+                GetUsergenresQuery {
+                    client: self.client,
+                    params: self.params,
+                    stmt: self.stmt,
+                    extractor: self.extractor,
+                    mapper,
+                }
+            }
+            pub async fn one(self) -> Result<T, tokio_postgres::Error> {
+                let stmt = self.stmt.prepare(self.client).await?;
+                let row = self.client.query_one(stmt, &self.params).await?;
+                Ok((self.mapper)((self.extractor)(&row)))
+            }
+            pub async fn all(self) -> Result<Vec<T>, tokio_postgres::Error> {
+                self.iter().await?.try_collect().await
+            }
+            pub async fn opt(self) -> Result<Option<T>, tokio_postgres::Error> {
+                let stmt = self.stmt.prepare(self.client).await?;
+                Ok(self
+                    .client
+                    .query_opt(stmt, &self.params)
+                    .await?
+                    .map(|row| (self.mapper)((self.extractor)(&row))))
+            }
+            pub async fn iter(
+                self,
+            ) -> Result<
+                impl futures::Stream<Item = Result<T, tokio_postgres::Error>> + 'a,
+                tokio_postgres::Error,
+            > {
+                let stmt = self.stmt.prepare(self.client).await?;
+                let it = self
+                    .client
+                    .query_raw(stmt, cornucopia_async::private::slice_iter(&self.params))
+                    .await?
+                    .map(move |res| res.map(|row| (self.mapper)((self.extractor)(&row))))
+                    .into_stream();
+                Ok(it)
+            }
+        }
         pub fn upsert_genre() -> UpsertGenreStmt {
             UpsertGenreStmt(cornucopia_async::private::Stmt::new(
                 "INSERT INTO genre(id, name)
@@ -350,6 +672,109 @@ ON CONFLICT (product_id, genre_id) DO UPDATE SET count = $3",
                 Box::pin(self.bind(client, &params.product_id, &params.genre_id, &params.count))
             }
         }
+        pub fn get_genre() -> GetGenreStmt {
+            GetGenreStmt(cornucopia_async :: private :: Stmt :: new("SELECT product_id, genre_id, name FROM product_genre JOIN genre g on product_genre.product_id = $1 and g.id = product_genre.genre_id"))
+        }
+        pub struct GetGenreStmt(cornucopia_async::private::Stmt);
+        impl GetGenreStmt {
+            pub fn bind<'a, C: GenericClient, T1: cornucopia_async::StringSql>(
+                &'a mut self,
+                client: &'a C,
+                genre: &'a T1,
+            ) -> GetGenreQuery<'a, C, GetGenre, 1> {
+                GetGenreQuery {
+                    client,
+                    params: [genre],
+                    stmt: &mut self.0,
+                    extractor: |row| GetGenreBorrowed {
+                        product_id: row.get(0),
+                        genre_id: row.get(1),
+                        name: row.get(2),
+                    },
+                    mapper: |it| <GetGenre>::from(it),
+                }
+            }
+        }
+        pub fn get_genres() -> GetGenresStmt {
+            GetGenresStmt(cornucopia_async :: private :: Stmt :: new("SELECT product_id, genre_id, name FROM product_genre JOIN genre g on product_genre.product_id = ANY($1) and g.id = product_genre.genre_id"))
+        }
+        pub struct GetGenresStmt(cornucopia_async::private::Stmt);
+        impl GetGenresStmt {
+            pub fn bind<
+                'a,
+                C: GenericClient,
+                T1: cornucopia_async::StringSql,
+                T2: cornucopia_async::ArraySql<Item = T1>,
+            >(
+                &'a mut self,
+                client: &'a C,
+                genres: &'a T2,
+            ) -> GetGenresQuery<'a, C, GetGenres, 1> {
+                GetGenresQuery {
+                    client,
+                    params: [genres],
+                    stmt: &mut self.0,
+                    extractor: |row| GetGenresBorrowed {
+                        product_id: row.get(0),
+                        genre_id: row.get(1),
+                        name: row.get(2),
+                    },
+                    mapper: |it| <GetGenres>::from(it),
+                }
+            }
+        }
+        pub fn get_usergenre() -> GetUsergenreStmt {
+            GetUsergenreStmt(cornucopia_async :: private :: Stmt :: new("SELECT product_id, genre_id, name FROM product_usergenre JOIN genre g on product_usergenre.product_id = $1 and g.id = product_usergenre.genre_id"))
+        }
+        pub struct GetUsergenreStmt(cornucopia_async::private::Stmt);
+        impl GetUsergenreStmt {
+            pub fn bind<'a, C: GenericClient, T1: cornucopia_async::StringSql>(
+                &'a mut self,
+                client: &'a C,
+                genre: &'a T1,
+            ) -> GetUsergenreQuery<'a, C, GetUsergenre, 1> {
+                GetUsergenreQuery {
+                    client,
+                    params: [genre],
+                    stmt: &mut self.0,
+                    extractor: |row| GetUsergenreBorrowed {
+                        product_id: row.get(0),
+                        genre_id: row.get(1),
+                        name: row.get(2),
+                    },
+                    mapper: |it| <GetUsergenre>::from(it),
+                }
+            }
+        }
+        pub fn get_usergenres() -> GetUsergenresStmt {
+            GetUsergenresStmt(cornucopia_async :: private :: Stmt :: new("SELECT product_id, genre_id, name, count FROM product_usergenre JOIN genre g on product_usergenre.product_id = ANY($1) and g.id = product_usergenre.genre_id"))
+        }
+        pub struct GetUsergenresStmt(cornucopia_async::private::Stmt);
+        impl GetUsergenresStmt {
+            pub fn bind<
+                'a,
+                C: GenericClient,
+                T1: cornucopia_async::StringSql,
+                T2: cornucopia_async::ArraySql<Item = T1>,
+            >(
+                &'a mut self,
+                client: &'a C,
+                genres: &'a T2,
+            ) -> GetUsergenresQuery<'a, C, GetUsergenres, 1> {
+                GetUsergenresQuery {
+                    client,
+                    params: [genres],
+                    stmt: &mut self.0,
+                    extractor: |row| GetUsergenresBorrowed {
+                        product_id: row.get(0),
+                        genre_id: row.get(1),
+                        name: row.get(2),
+                        count: row.get(3),
+                    },
+                    mapper: |it| <GetUsergenres>::from(it),
+                }
+            }
+        }
     }
     pub mod product {
         use cornucopia_async::GenericClient;
@@ -391,7 +816,22 @@ ON CONFLICT (product_id, genre_id) DO UPDATE SET count = $3",
             pub path: T14,
         }
         #[derive(Clone, Copy, Debug)]
-        pub struct GerProductAscReleasedAtParams {
+        pub struct GetProductReleasedAtAscParams {
+            pub limit: i64,
+            pub offset: i64,
+        }
+        #[derive(Clone, Copy, Debug)]
+        pub struct GetProductReleasedAtDescParams {
+            pub limit: i64,
+            pub offset: i64,
+        }
+        #[derive(Clone, Copy, Debug)]
+        pub struct GetProductNameAscParams {
+            pub limit: i64,
+            pub offset: i64,
+        }
+        #[derive(Clone, Copy, Debug)]
+        pub struct GetProductNameDescParams {
             pub limit: i64,
             pub offset: i64,
         }
@@ -448,7 +888,7 @@ ON CONFLICT (product_id, genre_id) DO UPDATE SET count = $3",
             }
         }
         #[derive(Debug, Clone, PartialEq)]
-        pub struct GerProductAscReleasedAt {
+        pub struct GetProduct {
             pub id: String,
             pub name: String,
             pub description: String,
@@ -467,7 +907,7 @@ ON CONFLICT (product_id, genre_id) DO UPDATE SET count = $3",
             pub path: String,
             pub remote_image: Vec<String>,
         }
-        pub struct GerProductAscReleasedAtBorrowed<'a> {
+        pub struct GetProductBorrowed<'a> {
             pub id: &'a str,
             pub name: &'a str,
             pub description: &'a str,
@@ -486,9 +926,9 @@ ON CONFLICT (product_id, genre_id) DO UPDATE SET count = $3",
             pub path: &'a str,
             pub remote_image: cornucopia_async::ArrayIterator<'a, &'a str>,
         }
-        impl<'a> From<GerProductAscReleasedAtBorrowed<'a>> for GerProductAscReleasedAt {
+        impl<'a> From<GetProductBorrowed<'a>> for GetProduct {
             fn from(
-                GerProductAscReleasedAtBorrowed {
+                GetProductBorrowed {
                     id,
                     name,
                     description,
@@ -506,7 +946,7 @@ ON CONFLICT (product_id, genre_id) DO UPDATE SET count = $3",
                     comment_count,
                     path,
                     remote_image,
-                }: GerProductAscReleasedAtBorrowed<'a>,
+                }: GetProductBorrowed<'a>,
             ) -> Self {
                 Self {
                     id: id.into(),
@@ -529,22 +969,638 @@ ON CONFLICT (product_id, genre_id) DO UPDATE SET count = $3",
                 }
             }
         }
-        pub struct GerProductAscReleasedAtQuery<'a, C: GenericClient, T, const N: usize> {
+        pub struct GetProductQuery<'a, C: GenericClient, T, const N: usize> {
             client: &'a C,
             params: [&'a (dyn postgres_types::ToSql + Sync); N],
             stmt: &'a mut cornucopia_async::private::Stmt,
-            extractor: fn(&tokio_postgres::Row) -> GerProductAscReleasedAtBorrowed,
-            mapper: fn(GerProductAscReleasedAtBorrowed) -> T,
+            extractor: fn(&tokio_postgres::Row) -> GetProductBorrowed,
+            mapper: fn(GetProductBorrowed) -> T,
         }
-        impl<'a, C, T: 'a, const N: usize> GerProductAscReleasedAtQuery<'a, C, T, N>
+        impl<'a, C, T: 'a, const N: usize> GetProductQuery<'a, C, T, N>
         where
             C: GenericClient,
         {
             pub fn map<R>(
                 self,
-                mapper: fn(GerProductAscReleasedAtBorrowed) -> R,
-            ) -> GerProductAscReleasedAtQuery<'a, C, R, N> {
-                GerProductAscReleasedAtQuery {
+                mapper: fn(GetProductBorrowed) -> R,
+            ) -> GetProductQuery<'a, C, R, N> {
+                GetProductQuery {
+                    client: self.client,
+                    params: self.params,
+                    stmt: self.stmt,
+                    extractor: self.extractor,
+                    mapper,
+                }
+            }
+            pub async fn one(self) -> Result<T, tokio_postgres::Error> {
+                let stmt = self.stmt.prepare(self.client).await?;
+                let row = self.client.query_one(stmt, &self.params).await?;
+                Ok((self.mapper)((self.extractor)(&row)))
+            }
+            pub async fn all(self) -> Result<Vec<T>, tokio_postgres::Error> {
+                self.iter().await?.try_collect().await
+            }
+            pub async fn opt(self) -> Result<Option<T>, tokio_postgres::Error> {
+                let stmt = self.stmt.prepare(self.client).await?;
+                Ok(self
+                    .client
+                    .query_opt(stmt, &self.params)
+                    .await?
+                    .map(|row| (self.mapper)((self.extractor)(&row))))
+            }
+            pub async fn iter(
+                self,
+            ) -> Result<
+                impl futures::Stream<Item = Result<T, tokio_postgres::Error>> + 'a,
+                tokio_postgres::Error,
+            > {
+                let stmt = self.stmt.prepare(self.client).await?;
+                let it = self
+                    .client
+                    .query_raw(stmt, cornucopia_async::private::slice_iter(&self.params))
+                    .await?
+                    .map(move |res| res.map(|row| (self.mapper)((self.extractor)(&row))))
+                    .into_stream();
+                Ok(it)
+            }
+        }
+        #[derive(Debug, Clone, PartialEq)]
+        pub struct GetProductReleasedAtAsc {
+            pub id: String,
+            pub name: String,
+            pub description: String,
+            pub series: String,
+            pub circle_id: String,
+            pub actor: Vec<String>,
+            pub author: Vec<String>,
+            pub illustrator: Vec<String>,
+            pub price: i32,
+            pub sale_count: i32,
+            pub age: super::super::types::public::Age,
+            pub released_at: time::Date,
+            pub rating: f64,
+            pub rating_count: i32,
+            pub comment_count: i32,
+            pub path: String,
+            pub remote_image: Vec<String>,
+            pub circle_name: String,
+        }
+        pub struct GetProductReleasedAtAscBorrowed<'a> {
+            pub id: &'a str,
+            pub name: &'a str,
+            pub description: &'a str,
+            pub series: &'a str,
+            pub circle_id: &'a str,
+            pub actor: cornucopia_async::ArrayIterator<'a, &'a str>,
+            pub author: cornucopia_async::ArrayIterator<'a, &'a str>,
+            pub illustrator: cornucopia_async::ArrayIterator<'a, &'a str>,
+            pub price: i32,
+            pub sale_count: i32,
+            pub age: super::super::types::public::Age,
+            pub released_at: time::Date,
+            pub rating: f64,
+            pub rating_count: i32,
+            pub comment_count: i32,
+            pub path: &'a str,
+            pub remote_image: cornucopia_async::ArrayIterator<'a, &'a str>,
+            pub circle_name: &'a str,
+        }
+        impl<'a> From<GetProductReleasedAtAscBorrowed<'a>> for GetProductReleasedAtAsc {
+            fn from(
+                GetProductReleasedAtAscBorrowed {
+                    id,
+                    name,
+                    description,
+                    series,
+                    circle_id,
+                    actor,
+                    author,
+                    illustrator,
+                    price,
+                    sale_count,
+                    age,
+                    released_at,
+                    rating,
+                    rating_count,
+                    comment_count,
+                    path,
+                    remote_image,
+                    circle_name,
+                }: GetProductReleasedAtAscBorrowed<'a>,
+            ) -> Self {
+                Self {
+                    id: id.into(),
+                    name: name.into(),
+                    description: description.into(),
+                    series: series.into(),
+                    circle_id: circle_id.into(),
+                    actor: actor.map(|v| v.into()).collect(),
+                    author: author.map(|v| v.into()).collect(),
+                    illustrator: illustrator.map(|v| v.into()).collect(),
+                    price,
+                    sale_count,
+                    age,
+                    released_at,
+                    rating,
+                    rating_count,
+                    comment_count,
+                    path: path.into(),
+                    remote_image: remote_image.map(|v| v.into()).collect(),
+                    circle_name: circle_name.into(),
+                }
+            }
+        }
+        pub struct GetProductReleasedAtAscQuery<'a, C: GenericClient, T, const N: usize> {
+            client: &'a C,
+            params: [&'a (dyn postgres_types::ToSql + Sync); N],
+            stmt: &'a mut cornucopia_async::private::Stmt,
+            extractor: fn(&tokio_postgres::Row) -> GetProductReleasedAtAscBorrowed,
+            mapper: fn(GetProductReleasedAtAscBorrowed) -> T,
+        }
+        impl<'a, C, T: 'a, const N: usize> GetProductReleasedAtAscQuery<'a, C, T, N>
+        where
+            C: GenericClient,
+        {
+            pub fn map<R>(
+                self,
+                mapper: fn(GetProductReleasedAtAscBorrowed) -> R,
+            ) -> GetProductReleasedAtAscQuery<'a, C, R, N> {
+                GetProductReleasedAtAscQuery {
+                    client: self.client,
+                    params: self.params,
+                    stmt: self.stmt,
+                    extractor: self.extractor,
+                    mapper,
+                }
+            }
+            pub async fn one(self) -> Result<T, tokio_postgres::Error> {
+                let stmt = self.stmt.prepare(self.client).await?;
+                let row = self.client.query_one(stmt, &self.params).await?;
+                Ok((self.mapper)((self.extractor)(&row)))
+            }
+            pub async fn all(self) -> Result<Vec<T>, tokio_postgres::Error> {
+                self.iter().await?.try_collect().await
+            }
+            pub async fn opt(self) -> Result<Option<T>, tokio_postgres::Error> {
+                let stmt = self.stmt.prepare(self.client).await?;
+                Ok(self
+                    .client
+                    .query_opt(stmt, &self.params)
+                    .await?
+                    .map(|row| (self.mapper)((self.extractor)(&row))))
+            }
+            pub async fn iter(
+                self,
+            ) -> Result<
+                impl futures::Stream<Item = Result<T, tokio_postgres::Error>> + 'a,
+                tokio_postgres::Error,
+            > {
+                let stmt = self.stmt.prepare(self.client).await?;
+                let it = self
+                    .client
+                    .query_raw(stmt, cornucopia_async::private::slice_iter(&self.params))
+                    .await?
+                    .map(move |res| res.map(|row| (self.mapper)((self.extractor)(&row))))
+                    .into_stream();
+                Ok(it)
+            }
+        }
+        #[derive(Debug, Clone, PartialEq)]
+        pub struct GetProductReleasedAtDesc {
+            pub id: String,
+            pub name: String,
+            pub description: String,
+            pub series: String,
+            pub circle_id: String,
+            pub actor: Vec<String>,
+            pub author: Vec<String>,
+            pub illustrator: Vec<String>,
+            pub price: i32,
+            pub sale_count: i32,
+            pub age: super::super::types::public::Age,
+            pub released_at: time::Date,
+            pub rating: f64,
+            pub rating_count: i32,
+            pub comment_count: i32,
+            pub path: String,
+            pub remote_image: Vec<String>,
+            pub circle_name: String,
+        }
+        pub struct GetProductReleasedAtDescBorrowed<'a> {
+            pub id: &'a str,
+            pub name: &'a str,
+            pub description: &'a str,
+            pub series: &'a str,
+            pub circle_id: &'a str,
+            pub actor: cornucopia_async::ArrayIterator<'a, &'a str>,
+            pub author: cornucopia_async::ArrayIterator<'a, &'a str>,
+            pub illustrator: cornucopia_async::ArrayIterator<'a, &'a str>,
+            pub price: i32,
+            pub sale_count: i32,
+            pub age: super::super::types::public::Age,
+            pub released_at: time::Date,
+            pub rating: f64,
+            pub rating_count: i32,
+            pub comment_count: i32,
+            pub path: &'a str,
+            pub remote_image: cornucopia_async::ArrayIterator<'a, &'a str>,
+            pub circle_name: &'a str,
+        }
+        impl<'a> From<GetProductReleasedAtDescBorrowed<'a>> for GetProductReleasedAtDesc {
+            fn from(
+                GetProductReleasedAtDescBorrowed {
+                    id,
+                    name,
+                    description,
+                    series,
+                    circle_id,
+                    actor,
+                    author,
+                    illustrator,
+                    price,
+                    sale_count,
+                    age,
+                    released_at,
+                    rating,
+                    rating_count,
+                    comment_count,
+                    path,
+                    remote_image,
+                    circle_name,
+                }: GetProductReleasedAtDescBorrowed<'a>,
+            ) -> Self {
+                Self {
+                    id: id.into(),
+                    name: name.into(),
+                    description: description.into(),
+                    series: series.into(),
+                    circle_id: circle_id.into(),
+                    actor: actor.map(|v| v.into()).collect(),
+                    author: author.map(|v| v.into()).collect(),
+                    illustrator: illustrator.map(|v| v.into()).collect(),
+                    price,
+                    sale_count,
+                    age,
+                    released_at,
+                    rating,
+                    rating_count,
+                    comment_count,
+                    path: path.into(),
+                    remote_image: remote_image.map(|v| v.into()).collect(),
+                    circle_name: circle_name.into(),
+                }
+            }
+        }
+        pub struct GetProductReleasedAtDescQuery<'a, C: GenericClient, T, const N: usize> {
+            client: &'a C,
+            params: [&'a (dyn postgres_types::ToSql + Sync); N],
+            stmt: &'a mut cornucopia_async::private::Stmt,
+            extractor: fn(&tokio_postgres::Row) -> GetProductReleasedAtDescBorrowed,
+            mapper: fn(GetProductReleasedAtDescBorrowed) -> T,
+        }
+        impl<'a, C, T: 'a, const N: usize> GetProductReleasedAtDescQuery<'a, C, T, N>
+        where
+            C: GenericClient,
+        {
+            pub fn map<R>(
+                self,
+                mapper: fn(GetProductReleasedAtDescBorrowed) -> R,
+            ) -> GetProductReleasedAtDescQuery<'a, C, R, N> {
+                GetProductReleasedAtDescQuery {
+                    client: self.client,
+                    params: self.params,
+                    stmt: self.stmt,
+                    extractor: self.extractor,
+                    mapper,
+                }
+            }
+            pub async fn one(self) -> Result<T, tokio_postgres::Error> {
+                let stmt = self.stmt.prepare(self.client).await?;
+                let row = self.client.query_one(stmt, &self.params).await?;
+                Ok((self.mapper)((self.extractor)(&row)))
+            }
+            pub async fn all(self) -> Result<Vec<T>, tokio_postgres::Error> {
+                self.iter().await?.try_collect().await
+            }
+            pub async fn opt(self) -> Result<Option<T>, tokio_postgres::Error> {
+                let stmt = self.stmt.prepare(self.client).await?;
+                Ok(self
+                    .client
+                    .query_opt(stmt, &self.params)
+                    .await?
+                    .map(|row| (self.mapper)((self.extractor)(&row))))
+            }
+            pub async fn iter(
+                self,
+            ) -> Result<
+                impl futures::Stream<Item = Result<T, tokio_postgres::Error>> + 'a,
+                tokio_postgres::Error,
+            > {
+                let stmt = self.stmt.prepare(self.client).await?;
+                let it = self
+                    .client
+                    .query_raw(stmt, cornucopia_async::private::slice_iter(&self.params))
+                    .await?
+                    .map(move |res| res.map(|row| (self.mapper)((self.extractor)(&row))))
+                    .into_stream();
+                Ok(it)
+            }
+        }
+        #[derive(Debug, Clone, PartialEq)]
+        pub struct GetProductNameAsc {
+            pub id: String,
+            pub name: String,
+            pub description: String,
+            pub series: String,
+            pub circle_id: String,
+            pub actor: Vec<String>,
+            pub author: Vec<String>,
+            pub illustrator: Vec<String>,
+            pub price: i32,
+            pub sale_count: i32,
+            pub age: super::super::types::public::Age,
+            pub released_at: time::Date,
+            pub rating: f64,
+            pub rating_count: i32,
+            pub comment_count: i32,
+            pub path: String,
+            pub remote_image: Vec<String>,
+            pub circle_name: String,
+        }
+        pub struct GetProductNameAscBorrowed<'a> {
+            pub id: &'a str,
+            pub name: &'a str,
+            pub description: &'a str,
+            pub series: &'a str,
+            pub circle_id: &'a str,
+            pub actor: cornucopia_async::ArrayIterator<'a, &'a str>,
+            pub author: cornucopia_async::ArrayIterator<'a, &'a str>,
+            pub illustrator: cornucopia_async::ArrayIterator<'a, &'a str>,
+            pub price: i32,
+            pub sale_count: i32,
+            pub age: super::super::types::public::Age,
+            pub released_at: time::Date,
+            pub rating: f64,
+            pub rating_count: i32,
+            pub comment_count: i32,
+            pub path: &'a str,
+            pub remote_image: cornucopia_async::ArrayIterator<'a, &'a str>,
+            pub circle_name: &'a str,
+        }
+        impl<'a> From<GetProductNameAscBorrowed<'a>> for GetProductNameAsc {
+            fn from(
+                GetProductNameAscBorrowed {
+                    id,
+                    name,
+                    description,
+                    series,
+                    circle_id,
+                    actor,
+                    author,
+                    illustrator,
+                    price,
+                    sale_count,
+                    age,
+                    released_at,
+                    rating,
+                    rating_count,
+                    comment_count,
+                    path,
+                    remote_image,
+                    circle_name,
+                }: GetProductNameAscBorrowed<'a>,
+            ) -> Self {
+                Self {
+                    id: id.into(),
+                    name: name.into(),
+                    description: description.into(),
+                    series: series.into(),
+                    circle_id: circle_id.into(),
+                    actor: actor.map(|v| v.into()).collect(),
+                    author: author.map(|v| v.into()).collect(),
+                    illustrator: illustrator.map(|v| v.into()).collect(),
+                    price,
+                    sale_count,
+                    age,
+                    released_at,
+                    rating,
+                    rating_count,
+                    comment_count,
+                    path: path.into(),
+                    remote_image: remote_image.map(|v| v.into()).collect(),
+                    circle_name: circle_name.into(),
+                }
+            }
+        }
+        pub struct GetProductNameAscQuery<'a, C: GenericClient, T, const N: usize> {
+            client: &'a C,
+            params: [&'a (dyn postgres_types::ToSql + Sync); N],
+            stmt: &'a mut cornucopia_async::private::Stmt,
+            extractor: fn(&tokio_postgres::Row) -> GetProductNameAscBorrowed,
+            mapper: fn(GetProductNameAscBorrowed) -> T,
+        }
+        impl<'a, C, T: 'a, const N: usize> GetProductNameAscQuery<'a, C, T, N>
+        where
+            C: GenericClient,
+        {
+            pub fn map<R>(
+                self,
+                mapper: fn(GetProductNameAscBorrowed) -> R,
+            ) -> GetProductNameAscQuery<'a, C, R, N> {
+                GetProductNameAscQuery {
+                    client: self.client,
+                    params: self.params,
+                    stmt: self.stmt,
+                    extractor: self.extractor,
+                    mapper,
+                }
+            }
+            pub async fn one(self) -> Result<T, tokio_postgres::Error> {
+                let stmt = self.stmt.prepare(self.client).await?;
+                let row = self.client.query_one(stmt, &self.params).await?;
+                Ok((self.mapper)((self.extractor)(&row)))
+            }
+            pub async fn all(self) -> Result<Vec<T>, tokio_postgres::Error> {
+                self.iter().await?.try_collect().await
+            }
+            pub async fn opt(self) -> Result<Option<T>, tokio_postgres::Error> {
+                let stmt = self.stmt.prepare(self.client).await?;
+                Ok(self
+                    .client
+                    .query_opt(stmt, &self.params)
+                    .await?
+                    .map(|row| (self.mapper)((self.extractor)(&row))))
+            }
+            pub async fn iter(
+                self,
+            ) -> Result<
+                impl futures::Stream<Item = Result<T, tokio_postgres::Error>> + 'a,
+                tokio_postgres::Error,
+            > {
+                let stmt = self.stmt.prepare(self.client).await?;
+                let it = self
+                    .client
+                    .query_raw(stmt, cornucopia_async::private::slice_iter(&self.params))
+                    .await?
+                    .map(move |res| res.map(|row| (self.mapper)((self.extractor)(&row))))
+                    .into_stream();
+                Ok(it)
+            }
+        }
+        #[derive(Debug, Clone, PartialEq)]
+        pub struct GetProductNameDesc {
+            pub id: String,
+            pub name: String,
+            pub description: String,
+            pub series: String,
+            pub circle_id: String,
+            pub actor: Vec<String>,
+            pub author: Vec<String>,
+            pub illustrator: Vec<String>,
+            pub price: i32,
+            pub sale_count: i32,
+            pub age: super::super::types::public::Age,
+            pub released_at: time::Date,
+            pub rating: f64,
+            pub rating_count: i32,
+            pub comment_count: i32,
+            pub path: String,
+            pub remote_image: Vec<String>,
+            pub circle_name: String,
+        }
+        pub struct GetProductNameDescBorrowed<'a> {
+            pub id: &'a str,
+            pub name: &'a str,
+            pub description: &'a str,
+            pub series: &'a str,
+            pub circle_id: &'a str,
+            pub actor: cornucopia_async::ArrayIterator<'a, &'a str>,
+            pub author: cornucopia_async::ArrayIterator<'a, &'a str>,
+            pub illustrator: cornucopia_async::ArrayIterator<'a, &'a str>,
+            pub price: i32,
+            pub sale_count: i32,
+            pub age: super::super::types::public::Age,
+            pub released_at: time::Date,
+            pub rating: f64,
+            pub rating_count: i32,
+            pub comment_count: i32,
+            pub path: &'a str,
+            pub remote_image: cornucopia_async::ArrayIterator<'a, &'a str>,
+            pub circle_name: &'a str,
+        }
+        impl<'a> From<GetProductNameDescBorrowed<'a>> for GetProductNameDesc {
+            fn from(
+                GetProductNameDescBorrowed {
+                    id,
+                    name,
+                    description,
+                    series,
+                    circle_id,
+                    actor,
+                    author,
+                    illustrator,
+                    price,
+                    sale_count,
+                    age,
+                    released_at,
+                    rating,
+                    rating_count,
+                    comment_count,
+                    path,
+                    remote_image,
+                    circle_name,
+                }: GetProductNameDescBorrowed<'a>,
+            ) -> Self {
+                Self {
+                    id: id.into(),
+                    name: name.into(),
+                    description: description.into(),
+                    series: series.into(),
+                    circle_id: circle_id.into(),
+                    actor: actor.map(|v| v.into()).collect(),
+                    author: author.map(|v| v.into()).collect(),
+                    illustrator: illustrator.map(|v| v.into()).collect(),
+                    price,
+                    sale_count,
+                    age,
+                    released_at,
+                    rating,
+                    rating_count,
+                    comment_count,
+                    path: path.into(),
+                    remote_image: remote_image.map(|v| v.into()).collect(),
+                    circle_name: circle_name.into(),
+                }
+            }
+        }
+        pub struct GetProductNameDescQuery<'a, C: GenericClient, T, const N: usize> {
+            client: &'a C,
+            params: [&'a (dyn postgres_types::ToSql + Sync); N],
+            stmt: &'a mut cornucopia_async::private::Stmt,
+            extractor: fn(&tokio_postgres::Row) -> GetProductNameDescBorrowed,
+            mapper: fn(GetProductNameDescBorrowed) -> T,
+        }
+        impl<'a, C, T: 'a, const N: usize> GetProductNameDescQuery<'a, C, T, N>
+        where
+            C: GenericClient,
+        {
+            pub fn map<R>(
+                self,
+                mapper: fn(GetProductNameDescBorrowed) -> R,
+            ) -> GetProductNameDescQuery<'a, C, R, N> {
+                GetProductNameDescQuery {
+                    client: self.client,
+                    params: self.params,
+                    stmt: self.stmt,
+                    extractor: self.extractor,
+                    mapper,
+                }
+            }
+            pub async fn one(self) -> Result<T, tokio_postgres::Error> {
+                let stmt = self.stmt.prepare(self.client).await?;
+                let row = self.client.query_one(stmt, &self.params).await?;
+                Ok((self.mapper)((self.extractor)(&row)))
+            }
+            pub async fn all(self) -> Result<Vec<T>, tokio_postgres::Error> {
+                self.iter().await?.try_collect().await
+            }
+            pub async fn opt(self) -> Result<Option<T>, tokio_postgres::Error> {
+                let stmt = self.stmt.prepare(self.client).await?;
+                Ok(self
+                    .client
+                    .query_opt(stmt, &self.params)
+                    .await?
+                    .map(|row| (self.mapper)((self.extractor)(&row))))
+            }
+            pub async fn iter(
+                self,
+            ) -> Result<
+                impl futures::Stream<Item = Result<T, tokio_postgres::Error>> + 'a,
+                tokio_postgres::Error,
+            > {
+                let stmt = self.stmt.prepare(self.client).await?;
+                let it = self
+                    .client
+                    .query_raw(stmt, cornucopia_async::private::slice_iter(&self.params))
+                    .await?
+                    .map(move |res| res.map(|row| (self.mapper)((self.extractor)(&row))))
+                    .into_stream();
+                Ok(it)
+            }
+        }
+        pub struct I64Query<'a, C: GenericClient, T, const N: usize> {
+            client: &'a C,
+            params: [&'a (dyn postgres_types::ToSql + Sync); N],
+            stmt: &'a mut cornucopia_async::private::Stmt,
+            extractor: fn(&tokio_postgres::Row) -> i64,
+            mapper: fn(i64) -> T,
+        }
+        impl<'a, C, T: 'a, const N: usize> I64Query<'a, C, T, N>
+        where
+            C: GenericClient,
+        {
+            pub fn map<R>(self, mapper: fn(i64) -> R) -> I64Query<'a, C, R, N> {
+                I64Query {
                     client: self.client,
                     params: self.params,
                     stmt: self.stmt,
@@ -830,27 +1886,23 @@ ON CONFLICT (id) DO UPDATE SET
                 client.execute(stmt, &[ids]).await
             }
         }
-        pub fn ger_product_asc_released_at() -> GerProductAscReleasedAtStmt {
-            GerProductAscReleasedAtStmt(cornucopia_async::private::Stmt::new(
-                "SELECT * FROM product
-ORDER BY released_at ASC
-LIMIT $1
-OFFSET $2",
+        pub fn get_product() -> GetProductStmt {
+            GetProductStmt(cornucopia_async::private::Stmt::new(
+                "SELECT * FROM product WHERE id = $1",
             ))
         }
-        pub struct GerProductAscReleasedAtStmt(cornucopia_async::private::Stmt);
-        impl GerProductAscReleasedAtStmt {
-            pub fn bind<'a, C: GenericClient>(
+        pub struct GetProductStmt(cornucopia_async::private::Stmt);
+        impl GetProductStmt {
+            pub fn bind<'a, C: GenericClient, T1: cornucopia_async::StringSql>(
                 &'a mut self,
                 client: &'a C,
-                limit: &'a i64,
-                offset: &'a i64,
-            ) -> GerProductAscReleasedAtQuery<'a, C, GerProductAscReleasedAt, 2> {
-                GerProductAscReleasedAtQuery {
+                id: &'a T1,
+            ) -> GetProductQuery<'a, C, GetProduct, 1> {
+                GetProductQuery {
                     client,
-                    params: [limit, offset],
+                    params: [id],
                     stmt: &mut self.0,
-                    extractor: |row| GerProductAscReleasedAtBorrowed {
+                    extractor: |row| GetProductBorrowed {
                         id: row.get(0),
                         name: row.get(1),
                         description: row.get(2),
@@ -869,24 +1921,264 @@ OFFSET $2",
                         path: row.get(15),
                         remote_image: row.get(16),
                     },
-                    mapper: |it| <GerProductAscReleasedAt>::from(it),
+                    mapper: |it| <GetProduct>::from(it),
+                }
+            }
+        }
+        pub fn get_product_released_at_asc() -> GetProductReleasedAtAscStmt {
+            GetProductReleasedAtAscStmt(cornucopia_async::private::Stmt::new(
+                "SELECT product.*, c.name circle_name FROM product 
+  JOIN circle c on c.id = product.circle_id 
+ORDER BY released_at ASC LIMIT $1 OFFSET $2",
+            ))
+        }
+        pub struct GetProductReleasedAtAscStmt(cornucopia_async::private::Stmt);
+        impl GetProductReleasedAtAscStmt {
+            pub fn bind<'a, C: GenericClient>(
+                &'a mut self,
+                client: &'a C,
+                limit: &'a i64,
+                offset: &'a i64,
+            ) -> GetProductReleasedAtAscQuery<'a, C, GetProductReleasedAtAsc, 2> {
+                GetProductReleasedAtAscQuery {
+                    client,
+                    params: [limit, offset],
+                    stmt: &mut self.0,
+                    extractor: |row| GetProductReleasedAtAscBorrowed {
+                        id: row.get(0),
+                        name: row.get(1),
+                        description: row.get(2),
+                        series: row.get(3),
+                        circle_id: row.get(4),
+                        actor: row.get(5),
+                        author: row.get(6),
+                        illustrator: row.get(7),
+                        price: row.get(8),
+                        sale_count: row.get(9),
+                        age: row.get(10),
+                        released_at: row.get(11),
+                        rating: row.get(12),
+                        rating_count: row.get(13),
+                        comment_count: row.get(14),
+                        path: row.get(15),
+                        remote_image: row.get(16),
+                        circle_name: row.get(17),
+                    },
+                    mapper: |it| <GetProductReleasedAtAsc>::from(it),
                 }
             }
         }
         impl<'a, C: GenericClient>
             cornucopia_async::Params<
                 'a,
-                GerProductAscReleasedAtParams,
-                GerProductAscReleasedAtQuery<'a, C, GerProductAscReleasedAt, 2>,
+                GetProductReleasedAtAscParams,
+                GetProductReleasedAtAscQuery<'a, C, GetProductReleasedAtAsc, 2>,
                 C,
-            > for GerProductAscReleasedAtStmt
+            > for GetProductReleasedAtAscStmt
         {
             fn params(
                 &'a mut self,
                 client: &'a C,
-                params: &'a GerProductAscReleasedAtParams,
-            ) -> GerProductAscReleasedAtQuery<'a, C, GerProductAscReleasedAt, 2> {
+                params: &'a GetProductReleasedAtAscParams,
+            ) -> GetProductReleasedAtAscQuery<'a, C, GetProductReleasedAtAsc, 2> {
                 self.bind(client, &params.limit, &params.offset)
+            }
+        }
+        pub fn get_product_released_at_desc() -> GetProductReleasedAtDescStmt {
+            GetProductReleasedAtDescStmt(cornucopia_async::private::Stmt::new(
+                "SELECT product.*, c.name circle_name FROM product 
+  JOIN circle c on c.id = product.circle_id 
+ORDER BY released_at DESC LIMIT $1 OFFSET $2",
+            ))
+        }
+        pub struct GetProductReleasedAtDescStmt(cornucopia_async::private::Stmt);
+        impl GetProductReleasedAtDescStmt {
+            pub fn bind<'a, C: GenericClient>(
+                &'a mut self,
+                client: &'a C,
+                limit: &'a i64,
+                offset: &'a i64,
+            ) -> GetProductReleasedAtDescQuery<'a, C, GetProductReleasedAtDesc, 2> {
+                GetProductReleasedAtDescQuery {
+                    client,
+                    params: [limit, offset],
+                    stmt: &mut self.0,
+                    extractor: |row| GetProductReleasedAtDescBorrowed {
+                        id: row.get(0),
+                        name: row.get(1),
+                        description: row.get(2),
+                        series: row.get(3),
+                        circle_id: row.get(4),
+                        actor: row.get(5),
+                        author: row.get(6),
+                        illustrator: row.get(7),
+                        price: row.get(8),
+                        sale_count: row.get(9),
+                        age: row.get(10),
+                        released_at: row.get(11),
+                        rating: row.get(12),
+                        rating_count: row.get(13),
+                        comment_count: row.get(14),
+                        path: row.get(15),
+                        remote_image: row.get(16),
+                        circle_name: row.get(17),
+                    },
+                    mapper: |it| <GetProductReleasedAtDesc>::from(it),
+                }
+            }
+        }
+        impl<'a, C: GenericClient>
+            cornucopia_async::Params<
+                'a,
+                GetProductReleasedAtDescParams,
+                GetProductReleasedAtDescQuery<'a, C, GetProductReleasedAtDesc, 2>,
+                C,
+            > for GetProductReleasedAtDescStmt
+        {
+            fn params(
+                &'a mut self,
+                client: &'a C,
+                params: &'a GetProductReleasedAtDescParams,
+            ) -> GetProductReleasedAtDescQuery<'a, C, GetProductReleasedAtDesc, 2> {
+                self.bind(client, &params.limit, &params.offset)
+            }
+        }
+        pub fn get_product_name_asc() -> GetProductNameAscStmt {
+            GetProductNameAscStmt(cornucopia_async::private::Stmt::new(
+                "SELECT product.*, c.name circle_name FROM product 
+  JOIN circle c on c.id = product.circle_id 
+ORDER BY name ASC LIMIT $1 OFFSET $2",
+            ))
+        }
+        pub struct GetProductNameAscStmt(cornucopia_async::private::Stmt);
+        impl GetProductNameAscStmt {
+            pub fn bind<'a, C: GenericClient>(
+                &'a mut self,
+                client: &'a C,
+                limit: &'a i64,
+                offset: &'a i64,
+            ) -> GetProductNameAscQuery<'a, C, GetProductNameAsc, 2> {
+                GetProductNameAscQuery {
+                    client,
+                    params: [limit, offset],
+                    stmt: &mut self.0,
+                    extractor: |row| GetProductNameAscBorrowed {
+                        id: row.get(0),
+                        name: row.get(1),
+                        description: row.get(2),
+                        series: row.get(3),
+                        circle_id: row.get(4),
+                        actor: row.get(5),
+                        author: row.get(6),
+                        illustrator: row.get(7),
+                        price: row.get(8),
+                        sale_count: row.get(9),
+                        age: row.get(10),
+                        released_at: row.get(11),
+                        rating: row.get(12),
+                        rating_count: row.get(13),
+                        comment_count: row.get(14),
+                        path: row.get(15),
+                        remote_image: row.get(16),
+                        circle_name: row.get(17),
+                    },
+                    mapper: |it| <GetProductNameAsc>::from(it),
+                }
+            }
+        }
+        impl<'a, C: GenericClient>
+            cornucopia_async::Params<
+                'a,
+                GetProductNameAscParams,
+                GetProductNameAscQuery<'a, C, GetProductNameAsc, 2>,
+                C,
+            > for GetProductNameAscStmt
+        {
+            fn params(
+                &'a mut self,
+                client: &'a C,
+                params: &'a GetProductNameAscParams,
+            ) -> GetProductNameAscQuery<'a, C, GetProductNameAsc, 2> {
+                self.bind(client, &params.limit, &params.offset)
+            }
+        }
+        pub fn get_product_name_desc() -> GetProductNameDescStmt {
+            GetProductNameDescStmt(cornucopia_async::private::Stmt::new(
+                "SELECT product.*, c.name circle_name FROM product 
+  JOIN circle c on c.id = product.circle_id 
+ORDER BY name DESC LIMIT $1 OFFSET $2",
+            ))
+        }
+        pub struct GetProductNameDescStmt(cornucopia_async::private::Stmt);
+        impl GetProductNameDescStmt {
+            pub fn bind<'a, C: GenericClient>(
+                &'a mut self,
+                client: &'a C,
+                limit: &'a i64,
+                offset: &'a i64,
+            ) -> GetProductNameDescQuery<'a, C, GetProductNameDesc, 2> {
+                GetProductNameDescQuery {
+                    client,
+                    params: [limit, offset],
+                    stmt: &mut self.0,
+                    extractor: |row| GetProductNameDescBorrowed {
+                        id: row.get(0),
+                        name: row.get(1),
+                        description: row.get(2),
+                        series: row.get(3),
+                        circle_id: row.get(4),
+                        actor: row.get(5),
+                        author: row.get(6),
+                        illustrator: row.get(7),
+                        price: row.get(8),
+                        sale_count: row.get(9),
+                        age: row.get(10),
+                        released_at: row.get(11),
+                        rating: row.get(12),
+                        rating_count: row.get(13),
+                        comment_count: row.get(14),
+                        path: row.get(15),
+                        remote_image: row.get(16),
+                        circle_name: row.get(17),
+                    },
+                    mapper: |it| <GetProductNameDesc>::from(it),
+                }
+            }
+        }
+        impl<'a, C: GenericClient>
+            cornucopia_async::Params<
+                'a,
+                GetProductNameDescParams,
+                GetProductNameDescQuery<'a, C, GetProductNameDesc, 2>,
+                C,
+            > for GetProductNameDescStmt
+        {
+            fn params(
+                &'a mut self,
+                client: &'a C,
+                params: &'a GetProductNameDescParams,
+            ) -> GetProductNameDescQuery<'a, C, GetProductNameDesc, 2> {
+                self.bind(client, &params.limit, &params.offset)
+            }
+        }
+        pub fn count_product() -> CountProductStmt {
+            CountProductStmt(cornucopia_async::private::Stmt::new(
+                "SELECT COUNT(*) FROM product",
+            ))
+        }
+        pub struct CountProductStmt(cornucopia_async::private::Stmt);
+        impl CountProductStmt {
+            pub fn bind<'a, C: GenericClient>(
+                &'a mut self,
+                client: &'a C,
+            ) -> I64Query<'a, C, i64, 0> {
+                I64Query {
+                    client,
+                    params: [],
+                    stmt: &mut self.0,
+                    extractor: |row| row.get(0),
+                    mapper: |it| it,
+                }
             }
         }
     }
