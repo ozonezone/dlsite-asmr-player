@@ -29,22 +29,24 @@ DELETE FROM product_genre WHERE product_id = ANY(:ids);
 --! delete_product_usergenre
 DELETE FROM product_usergenre WHERE product_id = ANY(:ids);
 
---! get_product_released_at_asc
-SELECT * FROM product  
-ORDER BY released_at ASC LIMIT :limit OFFSET :offset
-INNER JOIN circle ON product.circle_id = circle.id;
---! get_product_released_at_desc
-SELECT * FROM product ORDER BY released_at DESC LIMIT :limit OFFSET :offset;
 --! get_product_name_asc
 SELECT * FROM product ORDER BY name ASC LIMIT :limit OFFSET :offset;
 --! get_product_name_at_desc
 SELECT * FROM product ORDER BY name DESC LIMIT :limit OFFSET :offset;
 
---! get_product_released_at_asc_by_circle
-SELECT * FROM product ORDER BY released_at ASC LIMIT :limit OFFSET :offset WHERE circle_id  = :circle_id;
---! get_product_released_at_desc_by_circle
-SELECT * FROM product ORDER BY released_at DESC LIMIT :limit OFFSET :offset WHERE circle_id  = :circle_id;
---! get_product_name_asc_by_circle
-SELECT * FROM product ORDER BY name ASC LIMIT :limit OFFSET :offset WHERE circle_id  = :circle_id;
---! get_product_name_at_desc_by_circle
-SELECT * FROM product ORDER BY name DESC LIMIT :limit OFFSET :offset WHERE circle_id  = :circle_id;
+--! get_product_released_at_desc
+SELECT product.*,
+       circle.name,
+       array_agg(DISTINCT genre_product.name) genre_product,
+       array_agg(DISTINCT genre_user.name)    genre_user
+FROM ((SELECT * FROM product ORDER BY released_at DESC LIMIT :limit OFFSET :offset) AS product
+    INNER JOIN circle ON product.circle_id = circle.id
+    INNER JOIN product_genre ON product.id = product_genre.product_id
+    INNER JOIN genre as genre_product
+    ON product_genre.genre_id = genre_product.id
+    INNER JOIN product_usergenre ON product.id = product_usergenre.product_id
+    INNER JOIN genre as genre_user
+      ON product_usergenre.genre_id = genre_user.id)
+group by product.id, product.name, product.description, product.actor, product.age, product.author, product.circle_id,
+         product.series, product.comment_count, product.illustrator, product.path, product.price, product.sale_count,
+         product.comment_count, product.rating, product.released_at, product.rating_count, product.remote_image, circle.name;
