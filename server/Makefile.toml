@@ -32,6 +32,6 @@ dependencies = ["db-up"]
 script = "cd ../client && pnpm build"
 [tasks.copy-asset]
 script = "rm -rf ./assets && cp -r ../client/dist ./assets"
-[tasks.build]
-script = "docker build -t dlsite-asmr-player:latest ."
+[tasks.docker-build]
+script = "docker build -t dap:latest ."
 dependencies = ["build-frontend", "copy-asset"]
