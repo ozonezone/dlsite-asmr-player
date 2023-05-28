@@ -69,7 +69,7 @@ function PageInner(
             withAsterisk
             required
             label="Scan directory"
-            {...form.getInputProps("scan_dir")}
+            {...form.getInputProps("scan_dir.0")}
           />
         </SimpleGrid>
         <Divider my="sm" />
