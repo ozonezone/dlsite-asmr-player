@@ -1,17 +1,16 @@
 use anyhow::Result;
-use axum::{middleware::from_fn_with_state, routing::get};
+use axum::{
+    body::{boxed, Full},
+    http::{header, StatusCode, Uri},
+    middleware::from_fn_with_state,
+    response::{IntoResponse, Response},
+    routing::get,
+};
 use rspc::integrations::httpz::Request;
-use std::sync::Arc;
+use rust_embed::RustEmbed;
+use std::{ops::DerefMut, sync::Arc};
 use tokio::sync::RwLock;
 use tracing::info;
-
-#[cfg(not(debug_assertions))]
-use axum::{
-    http::StatusCode,
-    routing::{get, get_service},
-};
-#[cfg(not(debug_assertions))]
-use tower_http::services::{ServeDir, ServeFile};
 
 use crate::{
     config::Config,
@@ -29,6 +28,15 @@ mod pool;
 mod router;
 mod scan;
 mod stream;
+
+mod embedded {
+    use refinery::embed_migrations;
+    embed_migrations!("migrations");
+}
+
+#[derive(RustEmbed)]
+#[folder = "../client/dist/"]
+struct Assets;
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -51,7 +59,14 @@ async fn main() -> Result<()> {
 
     let pool = pool::create_pool().await?;
 
-    let client = pool.get().await?;
+    let mut client = pool.get().await?;
+
+    info!("Running database migrations");
+    embedded::migrations::runner()
+        .run_async(client.deref_mut().deref_mut())
+        .await?;
+    info!("Database migrations completed");
+
     if exist_user().bind(&client, &1).one().await? == 0 {
         info!("Creating default admin user with password 'password'");
         insert_user().bind(&client, &1, &"password").await?;
@@ -98,17 +113,8 @@ async fn main() -> Result<()> {
                 .axum(),
         );
 
-    #[cfg(not(debug_assertions))]
-    let app = app.fallback(
-        get_service(
-            ServeDir::new("assets")
-                // respond with `not_found.html` for missing files
-                .fallback(ServeFile::new("assets/404.html")),
-        )
-        .handle_error(|_| async move {
-            (StatusCode::INTERNAL_SERVER_ERROR, "Internal server error")
-        }),
-    );
+    // #[cfg(not(debug_assertions))]
+    let app = app.fallback(static_handler);
 
     let addr = "[::]:14567".parse::<std::net::SocketAddr>().unwrap(); // This listens on IPv6 and IPv4
     println!("listening on http://{}/rspc", addr);
@@ -118,4 +124,33 @@ async fn main() -> Result<()> {
         .unwrap();
 
     Ok(())
+}
+
+async fn static_handler(uri: Uri) -> Result<impl IntoResponse, StatusCode> {
+    let path = uri.path().trim_start_matches('/');
+
+    if let Some(content) = Assets::get(path) {
+        let body = boxed(Full::from(content.data));
+        let mime = mime_guess::from_path(path).first_or_octet_stream();
+
+        Ok(Response::builder()
+            .header(header::CONTENT_TYPE, mime.as_ref())
+            .body(body)
+            .unwrap())
+    } else {
+        index_html().await
+    }
+}
+
+async fn index_html() -> Result<Response, StatusCode> {
+    if let Some(content) = Assets::get("index.html") {
+        let body = boxed(Full::from(content.data));
+
+        Ok(Response::builder()
+            .header(header::CONTENT_TYPE, "text/html")
+            .body(body)
+            .unwrap())
+    } else {
+        Err(StatusCode::INTERNAL_SERVER_ERROR)
+    }
 }

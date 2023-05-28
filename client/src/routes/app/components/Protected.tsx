@@ -13,15 +13,17 @@ function Protected(props: ProtectedProps) {
     setSignedIn(true);
   }
 
-  return isLoading
-    ? (
+  if (error) {
+    return <Navigate to="/login" replace />;
+  } else if (isLoading) {
+    return (
       <div className="h-screen w-screen flex items-center justify-center flex-col gap-1">
         <Loader />
         <p>Loading app...</p>
       </div>
-    )
-    : error
-    ? <Navigate to="/login" replace />
-    : props.children;
+    );
+  } else {
+    return props.children;
+  }
 }
 export default Protected;

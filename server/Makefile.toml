@@ -28,5 +28,10 @@ atlas schema apply --url "postgresql://sample:password@localhost:5432/db?sslmode
 """
 dependencies = ["db-up"]
 
+[tasks.build-frontend]
+script = "cd ../client && pnpm build"
+[tasks.copy-asset]
+script = "rm -rf ./assets && cp -r ../client/dist ./assets"
 [tasks.build]
 script = "docker build -t dlsite-asmr-player:latest ."
+dependencies = ["build-frontend", "copy-asset"]
