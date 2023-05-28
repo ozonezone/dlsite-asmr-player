@@ -11,7 +11,7 @@ export function Login() {
   const [password, setPassword] = useState("");
 
   if (auth) {
-    return <Navigate to="/" replace />;
+    return <Navigate to="/app" replace />;
   }
 
   return (

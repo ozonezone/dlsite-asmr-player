@@ -5,9 +5,9 @@ use serde::{Deserialize, Serialize};
 use tracing::warn;
 
 use crate::cornucopia::queries::{
-    genre::{get_genres, get_usergenres},
+    genre::{get_genre, get_genres, get_usergenre, get_usergenres},
     product::{
-        count_product, get_product_name_asc, get_product_name_desc, get_product_path,
+        count_product, get_product, get_product_name_asc, get_product_name_desc, get_product_path,
         get_product_released_at_asc, get_product_released_at_desc,
     },
 };
@@ -52,6 +52,72 @@ pub struct BrowseParams {
 
 pub(crate) fn mount() -> RouterBuilder {
     <RouterBuilder>::new()
+        .query("get", |t| {
+            t(|ctx, product_id: String| async move {
+                let client = ctx
+                    .pool
+                    .get()
+                    .await
+                    .to_rspc_internal_error("Failed to get client")?;
+
+                let product = get_product()
+                    .bind(&client, &product_id)
+                    .one()
+                    .await
+                    .to_rspc_internal_error("Failed to get product")?;
+
+                let genre = get_genre()
+                    .bind(&client, &product.id)
+                    .all()
+                    .await
+                    .to_rspc_internal_error("Failed to get genre")?
+                    .into_iter()
+                    .map(move |g| Genre {
+                        name: g.name,
+                        id: g.genre_id,
+                    })
+                    .collect::<Vec<_>>();
+                let user_genre = get_usergenre()
+                    .bind(&client, &product.id)
+                    .all()
+                    .await
+                    .to_rspc_internal_error("Failed to get genre")?
+                    .into_iter()
+                    .map(move |g| UserGenre {
+                        name: g.name,
+                        id: g.genre_id,
+                        count: g.count,
+                    })
+                    .collect::<Vec<_>>();
+
+                Ok(ProductResult {
+                    genre,
+                    user_genre,
+                    id: product.id,
+                    name: product.name,
+                    description: product.description,
+                    actor: product.actor,
+                    series: product.series,
+                    circle_id: product.circle_id,
+                    author: product.author,
+                    illustrator: product.illustrator,
+                    price: product.price,
+                    age: match product.age {
+                        crate::cornucopia::types::public::Age::adult => Age::Adult,
+                        crate::cornucopia::types::public::Age::all_ages => Age::AllAges,
+                        crate::cornucopia::types::public::Age::r => Age::R,
+                    },
+                    sale_count: product.sale_count,
+                    released_at: product.released_at.to_string(),
+                    rating: product.rating,
+                    rating_count: product.rating_count,
+                    comment_count: product.comment_count,
+                    path: product.path,
+                    remote_image: product.remote_image,
+                    circle_name: product.circle_name,
+                })
+            })
+        })
         .query("browse", |t| {
             t(|ctx, params: BrowseParams| async move {
                 let client = ctx
@@ -149,11 +215,7 @@ pub(crate) fn mount() -> RouterBuilder {
                         author: product.author,
                         illustrator: product.illustrator,
                         price: product.price,
-                        age: match product.age {
-                            crate::cornucopia::types::public::Age::adult => Age::Adult,
-                            crate::cornucopia::types::public::Age::all_ages => Age::AllAges,
-                            crate::cornucopia::types::public::Age::r => Age::R,
-                        },
+                        age: product.age.into(),
                         sale_count: product.sale_count,
                         released_at: product.released_at.to_string(),
                         rating: product.rating,
@@ -194,6 +256,9 @@ pub(crate) fn mount() -> RouterBuilder {
                     let mut files: Vec<Vec<String>> = vec![];
                     for entry in walkdir::WalkDir::new(&product_folder) {
                         if let Ok(entry) = &entry {
+                            if entry.file_type().is_dir() {
+                                continue;
+                            }
                             if let Ok(relative_path) = entry.path().strip_prefix(&product_folder) {
                                 if let Some(relative_path) = relative_path
                                     .iter()

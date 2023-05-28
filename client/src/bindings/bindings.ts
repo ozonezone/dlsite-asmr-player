@@ -3,12 +3,13 @@
 
 export type Procedures = {
     queries: 
-        { key: "circle.browse", input: BrowseParams, result: [ProductResult[], number] } | 
+        { key: "circle.browse", input: CircleBrowseParams, result: [CircleProductResult[], number] } | 
         { key: "config.getConfig", input: never, result: Config } | 
         { key: "ping", input: never, result: string } | 
         { key: "ping_auth", input: never, result: string } | 
         { key: "product.browse", input: BrowseParams, result: [ProductResult[], number] } | 
-        { key: "product.files", input: string, result: string[][] },
+        { key: "product.files", input: string, result: string[][] } | 
+        { key: "product.get", input: string, result: ProductResult },
     mutations: 
         { key: "config.setConfig", input: Config, result: string } | 
         { key: "config.setPassword", input: string, result: null } | 
@@ -22,11 +23,11 @@ export type Config = { scan_dir: string[] }
 
 export type UserGenre = { id: string; name: string; count: number }
 
-export type BrowseParams = { sort_type: SortType; sort_order: SortOrder; page: number; limit: number; circle_id: string }
-
 export type BrowseParams = { sort_type: SortType; sort_order: SortOrder; page: number; limit: number }
 
-export type ProductResult = { id: string; name: string; description: string | null; series: string | null; circle_id: string; actor: string[]; author: string[]; illustrator: string[]; price: number; sale_count: number; age: Age; released_at: string; rating: number | null; rating_count: number; comment_count: number; path: string; remote_image: string[]; circle_name: string; genre: Genre[]; user_genre: UserGenre[] }
+export type CircleProductResult = { id: string; name: string; description: string | null; series: string | null; circle_id: string; actor: string[]; author: string[]; illustrator: string[]; price: number; sale_count: number; age: Age; released_at: string; rating: number | null; rating_count: number; comment_count: number; path: string; remote_image: string[]; circle_name: string; genre: Genre[]; user_genre: UserGenre[] }
+
+export type CircleBrowseParams = { sort_type: SortType; sort_order: SortOrder; page: number; limit: number; circle_id: string }
 
 export type Genre = { id: string; name: string }
 

@@ -18,7 +18,7 @@ use super::{
 };
 
 #[derive(Type, Serialize)]
-pub struct ProductResult {
+pub struct CircleProductResult {
     pub id: String,
     pub name: String,
     pub description: Option<String>,
@@ -42,7 +42,7 @@ pub struct ProductResult {
 }
 
 #[derive(Deserialize, Type)]
-pub struct BrowseParams {
+pub struct CircleBrowseParams {
     sort_type: SortType,
     sort_order: SortOrder,
     page: i32,
@@ -52,7 +52,7 @@ pub struct BrowseParams {
 
 pub(crate) fn mount() -> RouterBuilder {
     <RouterBuilder>::new().query("browse", |t| {
-        t(|ctx, params: BrowseParams| async move {
+        t(|ctx, params: CircleBrowseParams| async move {
             let client = ctx
                 .pool
                 .get()
@@ -156,7 +156,7 @@ pub(crate) fn mount() -> RouterBuilder {
 
             let products = result
                 .into_iter()
-                .map(|product| ProductResult {
+                .map(|product| CircleProductResult {
                     genre: genres.remove(&product.id).unwrap_or_default(),
                     user_genre: user_genres.remove(&product.id).unwrap_or_default(),
                     id: product.id,

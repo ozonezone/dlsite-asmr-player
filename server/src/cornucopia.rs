@@ -1256,11 +1256,13 @@ ORDER BY name DESC LIMIT $2 OFFSET $3",
             pub product_id: String,
             pub genre_id: String,
             pub name: String,
+            pub count: i32,
         }
         pub struct GetUsergenreBorrowed<'a> {
             pub product_id: &'a str,
             pub genre_id: &'a str,
             pub name: &'a str,
+            pub count: i32,
         }
         impl<'a> From<GetUsergenreBorrowed<'a>> for GetUsergenre {
             fn from(
@@ -1268,12 +1270,14 @@ ORDER BY name DESC LIMIT $2 OFFSET $3",
                     product_id,
                     genre_id,
                     name,
+                    count,
                 }: GetUsergenreBorrowed<'a>,
             ) -> Self {
                 Self {
                     product_id: product_id.into(),
                     genre_id: genre_id.into(),
                     name: name.into(),
+                    count,
                 }
             }
         }
@@ -1629,7 +1633,7 @@ ON CONFLICT (product_id, genre_id) DO UPDATE SET count = $3",
             }
         }
         pub fn get_usergenre() -> GetUsergenreStmt {
-            GetUsergenreStmt(cornucopia_async :: private :: Stmt :: new("SELECT product_id, genre_id, name FROM product_usergenre JOIN genre g on product_usergenre.product_id = $1 and g.id = product_usergenre.genre_id"))
+            GetUsergenreStmt(cornucopia_async :: private :: Stmt :: new("SELECT product_id, genre_id, name, count FROM product_usergenre JOIN genre g on product_usergenre.product_id = $1 and g.id = product_usergenre.genre_id"))
         }
         pub struct GetUsergenreStmt(cornucopia_async::private::Stmt);
         impl GetUsergenreStmt {
@@ -1646,6 +1650,7 @@ ON CONFLICT (product_id, genre_id) DO UPDATE SET count = $3",
                         product_id: row.get(0),
                         genre_id: row.get(1),
                         name: row.get(2),
+                        count: row.get(3),
                     },
                     mapper: |it| <GetUsergenre>::from(it),
                 }
@@ -1796,8 +1801,8 @@ ON CONFLICT (product_id, genre_id) DO UPDATE SET count = $3",
         pub struct GetProduct {
             pub id: String,
             pub name: String,
-            pub description: String,
-            pub series: String,
+            pub description: Option<String>,
+            pub series: Option<String>,
             pub circle_id: String,
             pub actor: Vec<String>,
             pub author: Vec<String>,
@@ -1806,17 +1811,18 @@ ON CONFLICT (product_id, genre_id) DO UPDATE SET count = $3",
             pub sale_count: i32,
             pub age: super::super::types::public::Age,
             pub released_at: time::Date,
-            pub rating: f64,
+            pub rating: Option<f64>,
             pub rating_count: i32,
             pub comment_count: i32,
             pub path: String,
             pub remote_image: Vec<String>,
+            pub circle_name: String,
         }
         pub struct GetProductBorrowed<'a> {
             pub id: &'a str,
             pub name: &'a str,
-            pub description: &'a str,
-            pub series: &'a str,
+            pub description: Option<&'a str>,
+            pub series: Option<&'a str>,
             pub circle_id: &'a str,
             pub actor: cornucopia_async::ArrayIterator<'a, &'a str>,
             pub author: cornucopia_async::ArrayIterator<'a, &'a str>,
@@ -1825,11 +1831,12 @@ ON CONFLICT (product_id, genre_id) DO UPDATE SET count = $3",
             pub sale_count: i32,
             pub age: super::super::types::public::Age,
             pub released_at: time::Date,
-            pub rating: f64,
+            pub rating: Option<f64>,
             pub rating_count: i32,
             pub comment_count: i32,
             pub path: &'a str,
             pub remote_image: cornucopia_async::ArrayIterator<'a, &'a str>,
+            pub circle_name: &'a str,
         }
         impl<'a> From<GetProductBorrowed<'a>> for GetProduct {
             fn from(
@@ -1851,13 +1858,14 @@ ON CONFLICT (product_id, genre_id) DO UPDATE SET count = $3",
                     comment_count,
                     path,
                     remote_image,
+                    circle_name,
                 }: GetProductBorrowed<'a>,
             ) -> Self {
                 Self {
                     id: id.into(),
                     name: name.into(),
-                    description: description.into(),
-                    series: series.into(),
+                    description: description.map(|v| v.into()),
+                    series: series.map(|v| v.into()),
                     circle_id: circle_id.into(),
                     actor: actor.map(|v| v.into()).collect(),
                     author: author.map(|v| v.into()).collect(),
@@ -1871,6 +1879,7 @@ ON CONFLICT (product_id, genre_id) DO UPDATE SET count = $3",
                     comment_count,
                     path: path.into(),
                     remote_image: remote_image.map(|v| v.into()).collect(),
+                    circle_name: circle_name.into(),
                 }
             }
         }
@@ -2793,7 +2802,8 @@ ON CONFLICT (id) DO UPDATE SET
         }
         pub fn get_product() -> GetProductStmt {
             GetProductStmt(cornucopia_async::private::Stmt::new(
-                "SELECT * FROM product WHERE id = $1",
+                "SELECT product.*, c.name circle_name FROM product
+  JOIN circle c ON product.id = $1 AND c.id = product.circle_id",
             ))
         }
         pub struct GetProductStmt(cornucopia_async::private::Stmt);
@@ -2825,6 +2835,7 @@ ON CONFLICT (id) DO UPDATE SET
                         comment_count: row.get(14),
                         path: row.get(15),
                         remote_image: row.get(16),
+                        circle_name: row.get(17),
                     },
                     mapper: |it| <GetProduct>::from(it),
                 }

@@ -29,8 +29,9 @@ DELETE FROM product_genre WHERE product_id = ANY(:ids);
 --! delete_product_usergenre
 DELETE FROM product_usergenre WHERE product_id = ANY(:ids);
 
---! get_product
-SELECT * FROM product WHERE id = :id;
+--! get_product : (description?,series?,rating?)
+SELECT product.*, c.name circle_name FROM product
+  JOIN circle c ON product.id = :id AND c.id = product.circle_id;
 
 --! get_product_path
 SELECT path FROM product WHERE id = :id;

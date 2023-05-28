@@ -72,17 +72,18 @@ fn parse_product_html(html: &Html) -> Result<ProductHtml> {
     };
 
     let images: Vec<Url> = html
-        .select(&Selector::parse(".work_slider img").unwrap())
+        .select(&Selector::parse(".product-slider-data > div").unwrap())
         .map(|element| {
-            let srcset = element
+            let url = element
                 .value()
-                .attr("srcset")
+                .attr("data-src")
                 .to_parse_error("Img tag appears but no src found")?;
-            format!("https:{}", srcset).parse().map_err(|e| {
-                DlsiteError::ParseError(format!("Failed to parse url: {} ({})", e, srcset))
+            format!("https:{}", url).parse().map_err(|e| {
+                DlsiteError::ParseError(format!("Failed to parse url: {} ({})", e, url))
             })
         })
-        .collect::<Result<_>>()?;
+        .filter_map(|result| result.ok())
+        .collect();
 
     // work_outline_table
     let work_outline_table = get_work_outline_table(html);

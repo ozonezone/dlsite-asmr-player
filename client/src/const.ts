@@ -36,4 +36,6 @@ export function isImageFile(filename: string) {
   return IMAGE_EXTENSIONS.some((ext) => filename.endsWith(ext));
 }
 
-export const SERVER_HOST = "localhost:14567";
+export const SERVER_HOST = import.meta.env.DEV
+  ? "localhost:14567"
+  : location.host;
