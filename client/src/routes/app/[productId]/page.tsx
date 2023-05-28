@@ -1,10 +1,10 @@
 import { rspc } from "@/state";
 import { PlayIcon } from "@heroicons/react/24/solid";
-import { Button } from "flowbite-react";
 import { useSetAtom } from "jotai";
 import { useParams } from "react-router-dom";
 import { playerDataAtom } from "../state";
 import { isAudioFile } from "@/const";
+import { Skeleton } from "@mantine/core";
 
 export default function Page() {
   const { productId } = useParams();
@@ -48,5 +48,5 @@ function ProductInner(props: { productId: string }) {
         </div>
       </div>
     )
-    : <div>Loading</div>;
+    : <Skeleton />;
 }

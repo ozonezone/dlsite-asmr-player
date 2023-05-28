@@ -4,7 +4,7 @@ use super::RouterBuilder;
 
 pub(crate) fn mount() -> RouterBuilder {
     <RouterBuilder>::new().mutation("start", |t| {
-        t(|ctx, _: ()| async move {
+        t(|ctx, force: bool| async move {
             if ctx.scan_status.read().await.is_scanning {
                 return Err(rspc::Error::new(
                     rspc::ErrorCode::InternalServerError,
@@ -12,7 +12,7 @@ pub(crate) fn mount() -> RouterBuilder {
                 ));
             }
 
-            scan::scan(&ctx.config.read().await.scan_dir, false, &ctx.pool)
+            scan::scan(&ctx.config.read().await.scan_dir, force, &ctx.pool)
                 .await
                 .map_err(|e| {
                     rspc::Error::new(

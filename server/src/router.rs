@@ -3,9 +3,10 @@ use std::sync::Arc;
 use deadpool_postgres::Pool;
 use rspc::{ErrorCode, Router};
 use tokio::sync::RwLock;
-use tracing::info;
 
-use crate::config::Config;
+use crate::{config::Config, cornucopia::queries::user::get_user};
+
+use self::utils::ToRspcError;
 
 mod circle;
 mod common;
@@ -41,9 +42,21 @@ pub(crate) fn mount() -> Arc<Router<RouterContext>> {
         .query("ping", |t| t(|_, _: ()| "pong"))
         .middleware(|mw| {
             mw.middleware(|mw| async move {
+                let client = mw
+                    .ctx
+                    .pool
+                    .get()
+                    .await
+                    .to_rspc_internal_error("Cannot connect db")?;
+                let password = get_user()
+                    .bind(&client, &1)
+                    .one()
+                    .await
+                    .to_rspc_internal_error("Failed to get user data")?
+                    .password;
                 match &mw.ctx.token {
                     Some(token) => {
-                        if token == &mw.ctx.config.read().await.password {
+                        if token == &password {
                             Ok(mw)
                         } else {
                             Err(rspc::Error::new(

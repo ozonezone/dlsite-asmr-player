@@ -1,7 +1,6 @@
 use std::{collections::HashMap, path::PathBuf, str::FromStr};
 
 use rspc::Type;
-use sanitize_filename::sanitize;
 use serde::{Deserialize, Serialize};
 use tracing::warn;
 

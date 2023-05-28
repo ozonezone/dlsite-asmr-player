@@ -2,21 +2,13 @@ use std::path::PathBuf;
 
 use anyhow::Result;
 use once_cell::sync::Lazy;
+use rspc::Type;
 use serde::{Deserialize, Serialize};
 use tokio::fs::create_dir_all;
 
-#[derive(Clone, Serialize, Deserialize, Debug)]
+#[derive(Clone, Serialize, Deserialize, Debug, Type, Default)]
 pub(crate) struct Config {
-    pub password: String,
     pub scan_dir: Vec<PathBuf>,
-}
-impl Default for Config {
-    fn default() -> Self {
-        Self {
-            password: "password".to_string(),
-            scan_dir: vec![],
-        }
-    }
 }
 
 pub(crate) static CONFIG_DIR: Lazy<PathBuf> = Lazy::new(|| {

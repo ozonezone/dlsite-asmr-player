@@ -1,7 +1,7 @@
-import { useAtom, useSetAtom } from "jotai";
-import { authAtom, rspc, signedInAtom } from "@/state";
+import { useSetAtom } from "jotai";
+import { rspc, signedInAtom } from "@/state";
 import { Navigate } from "react-router-dom";
-import { Spinner } from "@/components/ui/Spinner";
+import { Loader } from "@mantine/core";
 
 export function Root() {
   const auth = localStorage.getItem("auth");
@@ -25,7 +25,7 @@ function CheckSignedIn() {
   return isLoading
     ? (
       <div className="h-screen w-screen flex items-center justify-center flex-col gap-1">
-        <Spinner />
+        <Loader />
         <p>Loading app...</p>
       </div>
     )

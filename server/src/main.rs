@@ -14,7 +14,11 @@ use axum::{
 use tower_http::services::{ServeDir, ServeFile};
 
 use crate::{
-    config::Config, middleware::auth_middleware, router::RouterContext, stream::AxumRouterState,
+    config::Config,
+    cornucopia::queries::user::{exist_user, insert_user},
+    middleware::auth_middleware,
+    router::RouterContext,
+    stream::AxumRouterState,
 };
 
 mod config;
@@ -45,7 +49,13 @@ async fn main() -> Result<()> {
 
     let config = Arc::new(RwLock::new(config));
 
-    let pool = pool::create_pool().await.unwrap();
+    let pool = pool::create_pool().await?;
+
+    let client = pool.get().await?;
+    if exist_user().bind(&client, &1).one().await? == 0 {
+        info!("Creating default admin user with password 'password'");
+        insert_user().bind(&client, &1, &"password").await?;
+    }
 
     let router = router::mount();
     let scan_status = Arc::new(RwLock::new(router::ScanStatus { is_scanning: false }));

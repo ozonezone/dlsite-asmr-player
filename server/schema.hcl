@@ -164,3 +164,18 @@ table "product_usergenre" {
     ref_columns = [table.genre.column.id]
   }
 }
+
+table "users" {
+  schema = schema.public
+  column "id" {
+    null = false
+    type = int
+  }
+  column "password" {
+    null = false
+    type = text
+  }
+  primary_key {
+    columns = [column.id]
+  }
+}

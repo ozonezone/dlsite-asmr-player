@@ -1,4 +1,4 @@
-use crate::stream::AxumRouterState;
+use crate::{cornucopia::queries::user::get_user, stream::AxumRouterState};
 use axum::{
     extract::{Query, State},
     http::{Request, StatusCode},
@@ -18,7 +18,19 @@ pub(crate) async fn auth_middleware<B>(
     next: Next<B>,
 ) -> Result<impl IntoResponse, StatusCode> {
     if let Some(token) = query.token {
-        if token == state.config.read().await.password {
+        let client = state
+            .pool
+            .get()
+            .await
+            .map_err(|e| StatusCode::INTERNAL_SERVER_ERROR)?;
+        if token
+            == get_user()
+                .bind(&client, &1)
+                .one()
+                .await
+                .map_err(|e| StatusCode::INTERNAL_SERVER_ERROR)?
+                .password
+        {
             let response = next.run(request).await;
             return Ok(response);
         }

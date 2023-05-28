@@ -1,6 +1,5 @@
-import { Skeleton } from "@/components/ui/Skeleton";
-import { Spinner } from "@/components/ui/Spinner";
 import { rspc } from "@/state";
+import { Skeleton } from "@mantine/core";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 
