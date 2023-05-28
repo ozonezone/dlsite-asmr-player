@@ -32,20 +32,23 @@ DELETE FROM product_usergenre WHERE product_id = ANY(:ids);
 --! get_product
 SELECT * FROM product WHERE id = :id;
 
---! get_product_released_at_asc
+--! get_product_path
+SELECT path FROM product WHERE id = :id;
+
+--! get_product_released_at_asc : (description?,series?,rating?)
 SELECT product.*, c.name circle_name FROM product 
   JOIN circle c on c.id = product.circle_id 
 ORDER BY released_at ASC LIMIT :limit OFFSET :offset;
---! get_product_released_at_desc
+--! get_product_released_at_desc : (description?,series?,rating?)
 SELECT product.*, c.name circle_name FROM product 
   JOIN circle c on c.id = product.circle_id 
 ORDER BY released_at DESC LIMIT :limit OFFSET :offset;
 
---! get_product_name_asc
+--! get_product_name_asc : (description?,series?,rating?)
 SELECT product.*, c.name circle_name FROM product 
   JOIN circle c on c.id = product.circle_id 
 ORDER BY name ASC LIMIT :limit OFFSET :offset;
---! get_product_name_desc
+--! get_product_name_desc : (description?,series?,rating?)
 SELECT product.*, c.name circle_name FROM product 
   JOIN circle c on c.id = product.circle_id 
 ORDER BY name DESC LIMIT :limit OFFSET :offset;

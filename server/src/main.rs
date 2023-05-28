@@ -1,4 +1,5 @@
 use anyhow::Result;
+use axum::{middleware::from_fn_with_state, routing::get};
 use rspc::integrations::httpz::Request;
 use std::sync::Arc;
 use tokio::sync::RwLock;
@@ -12,14 +13,18 @@ use axum::{
 #[cfg(not(debug_assertions))]
 use tower_http::services::{ServeDir, ServeFile};
 
-use crate::{config::Config, router::RouterContext};
+use crate::{
+    config::Config, middleware::auth_middleware, router::RouterContext, stream::AxumRouterState,
+};
 
 mod config;
 mod cornucopia;
 mod db;
+mod middleware;
 mod pool;
 mod router;
 mod scan;
+mod stream;
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -45,26 +50,43 @@ async fn main() -> Result<()> {
     let router = router::mount();
     let scan_status = Arc::new(RwLock::new(router::ScanStatus { is_scanning: false }));
 
-    let app = axum::Router::new().nest(
-        "/rspc",
-        router
-            .endpoint(move |req: Request| {
-                let token = req.query_pairs().and_then(|pairs| {
-                    pairs
-                        .into_iter()
-                        .find(|(key, _)| key == "token")
-                        .map(|(_, value)| value.to_string())
-                });
+    let app = axum::Router::new()
+        .nest(
+            "/stream",
+            axum::Router::new()
+                .fallback(get(stream::stream))
+                .layer(from_fn_with_state(
+                    AxumRouterState {
+                        config: config.clone(),
+                        pool: pool.clone(),
+                    },
+                    auth_middleware,
+                )),
+        )
+        .with_state(AxumRouterState {
+            config: config.clone(),
+            pool: pool.clone(),
+        })
+        .nest(
+            "/rspc",
+            router
+                .endpoint(move |req: Request| {
+                    let token = req.query_pairs().and_then(|pairs| {
+                        pairs
+                            .into_iter()
+                            .find(|(key, _)| key == "token")
+                            .map(|(_, value)| value.to_string())
+                    });
 
-                RouterContext {
-                    config: config.clone(),
-                    pool,
-                    token,
-                    scan_status,
-                }
-            })
-            .axum(),
-    );
+                    RouterContext {
+                        config: config.clone(),
+                        pool,
+                        token,
+                        scan_status,
+                    }
+                })
+                .axum(),
+        );
 
     #[cfg(not(debug_assertions))]
     let app = app.fallback(

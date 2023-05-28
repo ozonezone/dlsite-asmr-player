@@ -1,9 +1,12 @@
+// Global state that is used in anywhere in the app (including unauthorized pages)
+
 import { atomWithStorage, selectAtom } from "jotai/utils";
 import { QueryClient } from "@tanstack/react-query";
 import { createReactQueryHooks } from "@rspc/react";
 import { createClient, WebsocketTransport } from "@rspc/client";
 import type { Procedures } from "@/bindings/bindings";
 import { atom } from "jotai";
+import { SERVER_HOST } from "./const";
 
 export const authAtom = atomWithStorage<null | string>("auth", null);
 export const signedInAtom = atom(false);
@@ -16,9 +19,7 @@ export const clientAtom = selectAtom(
   (auth) =>
     createClient<Procedures>({
       transport: new WebsocketTransport(
-        `ws://${location.hostname}:14567/rspc/ws${
-          auth ? "?token=" + auth : ""
-        }`,
+        `ws://${SERVER_HOST}/rspc/ws${auth ? "?token=" + auth : ""}`,
       ),
     }),
 );

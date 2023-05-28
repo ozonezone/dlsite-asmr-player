@@ -7,6 +7,8 @@ use tracing::info;
 
 use crate::config::Config;
 
+mod circle;
+mod common;
 mod config;
 mod product;
 mod scan;
@@ -42,7 +44,6 @@ pub(crate) fn mount() -> Arc<Router<RouterContext>> {
                 match &mw.ctx.token {
                     Some(token) => {
                         if token == &mw.ctx.config.read().await.password {
-                            info!("Authorized");
                             Ok(mw)
                         } else {
                             Err(rspc::Error::new(
@@ -62,6 +63,7 @@ pub(crate) fn mount() -> Arc<Router<RouterContext>> {
         .merge("config.", config::mount())
         .merge("scan.", scan::mount())
         .merge("product.", product::mount())
+        .merge("circle.", circle::mount())
         .build()
         .arced()
 }

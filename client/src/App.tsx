@@ -1,22 +1,15 @@
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import "./index.css";
-import Protected from "./components/Protected";
 import { clientAtom, queryClient, rspc } from "./state";
 import { useAtom } from "jotai";
 
-import { Root } from "./Root";
-import { Login } from "./login/Login";
-import { router as appRouter } from "./app";
+import { router as rootRouter } from "./routes/route";
+import { router as loginRouter } from "./routes/login/route";
+import { router as appRouter } from "./routes/app/route";
 
 const router = createBrowserRouter([
-  {
-    path: "/",
-    element: <Root />,
-  },
-  {
-    path: "/login",
-    element: <Login />,
-  },
+  rootRouter,
+  loginRouter,
   appRouter,
 ]);
 
