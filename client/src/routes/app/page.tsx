@@ -39,9 +39,10 @@ export default function Page() {
       asideOffsetBreakpoint="sm"
       navbar={
         <Navbar
-          hiddenBreakpoint="sm"
-          hidden={!opened}
-          width={{ sm: 200, lg: 300 }}
+          width={{ sm: opened ? 200 : 0 }}
+          className={`${
+            opened ? "" : "md:translate-x-[-200px] -translate-x-full"
+          } transition-all duration-100`}
         >
           <CustomNavbar />
         </Navbar>
@@ -55,7 +56,7 @@ export default function Page() {
       }
       header={
         <Header
-          height={{ base: 50, md: 70 }}
+          height={{ base: 50 }}
           p="md"
         >
           <CustomHeader opened={opened} setOpened={setOpened} />

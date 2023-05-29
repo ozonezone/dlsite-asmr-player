@@ -1,4 +1,11 @@
-import { Burger, MediaQuery, Text, useMantineTheme } from "@mantine/core";
+import {
+  Burger,
+  MediaQuery,
+  Text,
+  Title,
+  useMantineTheme,
+} from "@mantine/core";
+import { Link } from "react-router-dom";
 
 export function Header(
   props: {
@@ -12,17 +19,17 @@ export function Header(
     <div
       style={{ display: "flex", alignItems: "center", height: "100%" }}
     >
-      <MediaQuery largerThan="sm" styles={{ display: "none" }}>
-        <Burger
-          opened={props.opened}
-          onClick={() => props.setOpened((o) => !o)}
-          size="sm"
-          color={theme.colors.gray[6]}
-          mr="xl"
-        />
-      </MediaQuery>
+      <Burger
+        opened={props.opened}
+        onClick={() => props.setOpened((o) => !o)}
+        size="sm"
+        color={theme.colors.gray[6]}
+        mr="xl"
+      />
 
-      <Text>dap</Text>
+      <Link to={`/app/`}>
+        <Title order={3}>DAPlayer</Title>
+      </Link>
     </div>
   );
 }

@@ -1,4 +1,4 @@
-import { ProductResult } from "@/bindings/bindings";
+import { ProductResult, SortOrder, SortType } from "@/bindings/bindings";
 import { rspc } from "@/state";
 import {
   Card,
@@ -10,26 +10,35 @@ import {
 } from "@mantine/core";
 import { Link } from "react-router-dom";
 import { AgeBadge } from "../[productId]/components/AgeBadge";
-import { useState } from "react";
 import { Skeleton } from "@/components/Skeleton";
+import {
+  createEnumParam,
+  NumberParam,
+  useQueryParam,
+  withDefault,
+} from "use-query-params";
+
+const PageParam = withDefault(NumberParam, 1);
+const SortOrderParam = withDefault(createEnumParam(["Desc", "Asc"]), "Desc");
+const SortTypeParam = withDefault(createEnumParam(["Date", "Name"]), "Date");
 
 export default function Page() {
-  const [sortOrder, setSortOrder] = useState<"Desc" | "Asc">("Desc");
-  const [sortType, setSortType] = useState<"Date" | "Name">("Date");
-  const [page, setPage] = useState(1);
+  const [page, setPage] = useQueryParam("page", PageParam);
+  const [sortOrder, setSortOrder] = useQueryParam("order", SortOrderParam);
+  const [sortType, setSortType] = useQueryParam("sortType", SortTypeParam);
   const limit = 50;
 
   const { data, isLoading, error } = rspc.useQuery(["product.browse", {
     limit,
     page: page,
-    sort_type: sortType,
-    sort_order: sortOrder,
+    sort_type: sortType as SortType,
+    sort_order: sortOrder as SortOrder,
   }]);
   const totalPage = data ? (data[1] / limit + 1) : null;
 
   return (
     <div className="flex flex-col justify-center items-center gap-2">
-      <div className="flex flex-row gap-3">
+      <div className="flex flex-row gap-3 justify-center items-center">
         <NativeSelect
           data={["Desc", "Asc"]}
           label="Sort order"
@@ -46,6 +55,7 @@ export default function Page() {
             setSortType(e.currentTarget.value as "Date" | "Name");
           }}
         />
+        {data ? <div>{data[1]} items</div> : null}
       </div>
       {totalPage
         ? (
@@ -77,7 +87,6 @@ function ItemCard({ product }: { product: ProductResult }) {
           <Image
             src={product.remote_image[0]}
             height={160}
-            alt="Norway"
           />
         </Card.Section>
 

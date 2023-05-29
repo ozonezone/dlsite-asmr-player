@@ -1,6 +1,5 @@
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import "./index.css";
-import { clientAtom, queryClient, rspc } from "./state";
 import {
   ColorScheme,
   ColorSchemeProvider,
@@ -8,13 +7,16 @@ import {
   MantineProvider,
 } from "@mantine/core";
 import { useAtom } from "jotai";
+import { useState } from "react";
+import { useColorScheme } from "@mantine/hooks";
+import { Notifications } from "@mantine/notifications";
+import { QueryParamProvider } from "use-query-params";
+import { ReactRouter6Adapter } from "use-query-params/adapters/react-router-6";
 
 import { router as rootRouter } from "./routes/route";
 import { router as loginRouter } from "./routes/login/route";
 import { router as appRouter } from "./routes/app/route";
-import { useState } from "react";
-import { useColorScheme } from "@mantine/hooks";
-import { Notifications } from "@mantine/notifications";
+import { clientAtom, queryClient, rspc } from "./state";
 
 const router = createBrowserRouter([
   rootRouter,

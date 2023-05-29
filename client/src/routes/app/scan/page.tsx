@@ -26,6 +26,10 @@ export default function Page() {
         type="button"
         onClick={async () => {
           await startScan(false);
+          notifications.show({
+            title: "Info",
+            message: "Scan finished",
+          });
         }}
       >
         {isLoading ? <Loader size="sm" /> : "Start scan"}
@@ -36,6 +40,10 @@ export default function Page() {
         type="button"
         onClick={async () => {
           await startScan(true);
+          notifications.show({
+            title: "Info",
+            message: "Force scan finished",
+          });
         }}
       >
         {isLoading ? <Loader size="sm" /> : "Force scan"}
