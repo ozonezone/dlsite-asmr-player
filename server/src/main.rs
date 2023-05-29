@@ -9,7 +9,7 @@ use axum::{
 use rspc::integrations::httpz::Request;
 use rust_embed::RustEmbed;
 use std::{ops::DerefMut, sync::Arc};
-use tokio::sync::RwLock;
+use tokio::{signal, sync::RwLock};
 use tracing::info;
 
 use crate::{
@@ -118,10 +118,14 @@ async fn main() -> Result<()> {
 
     let addr = "[::]:14567".parse::<std::net::SocketAddr>().unwrap(); // This listens on IPv6 and IPv4
     println!("listening on http://{}/rspc", addr);
-    axum::Server::bind(&addr)
-        .serve(app.into_make_service())
-        .await
-        .unwrap();
+    let axum_task = axum::Server::bind(&addr).serve(app.into_make_service());
+
+    tokio::select! {
+        _ = signal::ctrl_c() => {
+                info!("Ctrl-C received, shutting down");
+        },
+        _ = axum_task => {},
+    }
 
     Ok(())
 }

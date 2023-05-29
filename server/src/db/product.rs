@@ -24,10 +24,9 @@ pub async fn create_product(
     path: PathBuf,
 ) -> Result<(), anyhow::Error> {
     let mut client = pool.get().await?;
-    let transaction = client.transaction().await?;
     upsert_circle()
         .params(
-            &transaction,
+            &client,
             &UpsertCircleParams {
                 id: product.circle.id.clone(),
                 name: product.circle.name,
@@ -37,7 +36,7 @@ pub async fn create_product(
 
     upsert_product()
         .params(
-            &transaction,
+            &client,
             &UpsertProductParams {
                 id: product.id.clone(),
                 name: product.title,
@@ -72,6 +71,7 @@ pub async fn create_product(
         .await?;
 
     for genre in product.genre {
+        let transaction = client.transaction().await?;
         upsert_genre()
             .params(
                 &transaction,
@@ -90,9 +90,15 @@ pub async fn create_product(
                 },
             )
             .await?;
+
+        transaction.commit().await.map_err(|e| {
+            error!("Could not commit transaction: {}", e);
+            e
+        })?;
     }
 
     for (genre, count) in product.reviewer_genre {
+        let transaction = client.transaction().await?;
         upsert_genre()
             .params(
                 &transaction,
@@ -112,12 +118,11 @@ pub async fn create_product(
                 },
             )
             .await?;
+        transaction.commit().await.map_err(|e| {
+            error!("Could not commit transaction: {}", e);
+            e
+        })?;
     }
-
-    transaction.commit().await.map_err(|e| {
-        error!("Could not commit transaction: {}", e);
-        e
-    })?;
 
     Ok(())
 }
