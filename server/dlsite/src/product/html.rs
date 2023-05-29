@@ -120,6 +120,11 @@ fn parse_product_html(html: &Html) -> Result<ProductHtml> {
         .text()
         .next()
         .to_parse_error("No released_at found")?;
+    let released_at = regex::Regex::new(r"\d*年\d*月\d*日")
+        .unwrap()
+        .find(released_at)
+        .to_parse_error("Failed to parse released_at")?
+        .as_str();
     let released_at = NaiveDate::parse_from_str(released_at, "%Y年%m月%d日")
         .map_err(|_| DlsiteError::ParseError("Failed to parse released_at".to_string()))?;
 

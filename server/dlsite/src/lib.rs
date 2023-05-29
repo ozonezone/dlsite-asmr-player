@@ -21,7 +21,7 @@ pub enum DlsiteError {
     SerdeJsonError(#[from] serde_json::Error),
     #[error("{0}")]
     ParseError(String),
-    #[error("{0}")]
+    #[error("serde error: {0}")]
     ServerError(String),
 }
 

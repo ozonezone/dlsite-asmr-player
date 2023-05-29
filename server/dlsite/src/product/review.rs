@@ -38,7 +38,7 @@ pub struct Review {
     pub circle_id: String,
     pub nick_name: String,
     pub popularity: Option<String>,
-    pub rate: String,
+    pub rate: Option<String>,
     pub circle_name: String,
     pub top_sort_key: Option<String>,
     pub reviewer_status: String,

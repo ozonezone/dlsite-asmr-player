@@ -58,7 +58,7 @@ pub async fn scan(folders: &Vec<PathBuf>, force: bool, pool: &Pool) -> anyhow::R
             tokio::spawn(async move {
                 let res = dlsite_client.get_product(&id).await;
                 if let Err(err) = &res {
-                    error!("Failed to fetch metadata for {}: {}", id, err);
+                    error!("Failed to fetch metadata for {}: {:?}", id, err);
                 }
                 (res, data.1.clone())
             })
