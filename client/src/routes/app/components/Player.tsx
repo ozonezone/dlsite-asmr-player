@@ -13,13 +13,27 @@ export function Player(props: { playerData: NonNullable<PlayerData> }) {
   const setPlayerData = useSetAtom(playerDataAtom);
   const getStreamUrl = useStreamUrl();
   const currentFile = props.playerData.queue[props.playerData.queueIdx];
+  const fileName = currentFile.path[currentFile.path.length - 1];
+  const fileParents = currentFile.path.slice(0, -1);
   return (
     <AudioPlayer
       autoPlay
       showSkipControls={true}
       header={
         <div className="flex flex-row justify-between">
-          <div>{currentFile.title}</div>
+          <div>
+            <span className="text-gray-400">
+              {props.playerData.productId}/
+            </span>
+            {fileParents.map((path, idx) => (
+              <>
+                <span className="text-gray-400" key={idx}>
+                  {path}/
+                </span>
+              </>
+            ))}
+            <span>{fileName}</span>
+          </div>
           <ActionIcon onClick={() => setPlayerData(null)}>
             <XMarkIcon />
           </ActionIcon>

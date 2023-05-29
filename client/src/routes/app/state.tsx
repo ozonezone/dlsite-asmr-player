@@ -4,7 +4,6 @@ import { atom } from "jotai";
 export type PlayerData = {
   productId: string;
   queue: {
-    title: string;
     path: string[];
   }[];
   queueIdx: number;

@@ -165,15 +165,11 @@ function ProductInner(props: { productId: string }) {
                           onClick={() => {
                             setPlayerData({
                               productId: props.productId,
-                              queue: files.filter((file) =>
-                                isAudioFile(file[file.length - 1] ?? "")
-                              )
-                                .map((file) => {
-                                  return {
-                                    title: file[file.length - 1],
-                                    path: file,
-                                  };
-                                }),
+                              queue: audioFiles.map((file) => {
+                                return {
+                                  path: file,
+                                };
+                              }),
                               queueIdx: idx,
                               playing: true,
                             });
