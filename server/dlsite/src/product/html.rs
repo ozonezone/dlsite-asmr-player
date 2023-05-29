@@ -130,24 +130,27 @@ fn parse_product_html(html: &Html) -> Result<ProductHtml> {
 
     let genre = work_outline_table
         .get("ジャンル")
-        .to_parse_error("No genre found")?
-        .select(&Selector::parse("a").unwrap())
-        .filter_map(|element| {
-            let name = element.text().next()?.to_string();
-            let mut id = None;
-            let mut next = false;
-            element.value().attr("href")?.split('/').for_each(|s| {
-                if next {
-                    id = Some(s.to_string());
-                    next = false;
-                }
-                if s == "genre" {
-                    next = true;
-                }
-            });
-            id.map(|id| Genre { name, id })
+        .map(|element| {
+            element
+                .select(&Selector::parse("a").unwrap())
+                .filter_map(|element| {
+                    let name = element.text().next()?.to_string();
+                    let mut id = None;
+                    let mut next = false;
+                    element.value().attr("href")?.split('/').for_each(|s| {
+                        if next {
+                            id = Some(s.to_string());
+                            next = false;
+                        }
+                        if s == "genre" {
+                            next = true;
+                        }
+                    });
+                    id.map(|id| Genre { name, id })
+                })
+                .collect::<Vec<_>>()
         })
-        .collect::<Vec<_>>();
+        .unwrap_or_default();
 
     Ok(ProductHtml {
         released_at,
