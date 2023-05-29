@@ -6,12 +6,12 @@ import {
   Image,
   NativeSelect,
   Pagination,
-  Skeleton,
   Text,
 } from "@mantine/core";
 import { Link } from "react-router-dom";
 import { AgeBadge } from "../[productId]/components/AgeBadge";
 import { useState } from "react";
+import { Skeleton } from "@/components/Skeleton";
 
 export default function Page() {
   const [sortOrder, setSortOrder] = useState<"Desc" | "Asc">("Desc");

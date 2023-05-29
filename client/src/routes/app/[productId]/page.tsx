@@ -1,5 +1,5 @@
 import { rspc } from "@/state";
-import { PlayIcon } from "@heroicons/react/24/solid";
+import { PhotoIcon, PlayIcon } from "@heroicons/react/24/solid";
 import { useSetAtom } from "jotai";
 import { useParams } from "react-router-dom";
 import { playerDataAtom } from "../state";
@@ -10,13 +10,15 @@ import {
   Badge,
   Divider,
   List,
-  Skeleton,
   Table,
   Title,
 } from "@mantine/core";
 import ImageGallery from "react-image-gallery";
 import "react-image-gallery/styles/css/image-gallery.css";
 import { AgeBadge } from "./components/AgeBadge";
+import { Skeleton } from "@/components/Skeleton";
+import { useEffect, useState } from "react";
+import { useStreamUrl } from "../utils";
 
 export default function Page() {
   const { productId } = useParams();
@@ -32,16 +34,20 @@ function ProductInner(props: { productId: string }) {
   const { data: files } = rspc.useQuery(["product.files", props.productId]);
   const { data: product } = rspc.useQuery(["product.get", props.productId]);
   const setPlayerData = useSetAtom(playerDataAtom);
+  const getStreamUrl = useStreamUrl();
+  const [imageIdx, setImageIdx] = useState<null | number>(null);
 
   const audioFiles =
-    files?.filter((file) => isAudioFile(file[file.length - 1] ?? "")) ?? [];
+    files?.filter((file) => isAudioFile(file[file.length - 1] ?? "")).sort() ??
+      [];
   const imageFiles =
-    files?.filter((file) => isImageFile(file[file.length - 1] ?? "")) ?? [];
+    files?.filter((file) => isImageFile(file[file.length - 1] ?? "")).sort() ??
+      [];
   const otherFiles = files?.filter(
     (file) =>
       !isAudioFile(file[file.length - 1] ?? "") &&
       !isImageFile(file[file.length - 1] ?? ""),
-  ) ?? [];
+  ).sort() ?? [];
 
   return files && product
     ? (
@@ -168,6 +174,22 @@ function ProductInner(props: { productId: string }) {
                   {imageFiles.map((file, idx) => (
                     <List.Item
                       key={idx}
+                      icon={
+                        <ActionIcon
+                          color="blue"
+                          size={24}
+                          radius="xl"
+                          onClick={() => {
+                            setImageIdx(idx);
+                            window.open(
+                              getStreamUrl(props.productId, file),
+                              "_blank",
+                            );
+                          }}
+                        >
+                          <PhotoIcon className="w-4 h-4" />
+                        </ActionIcon>
+                      }
                     >
                       {file.map((path) => path).join("/")}
                     </List.Item>

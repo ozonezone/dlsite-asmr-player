@@ -1,13 +1,7 @@
 import { Config } from "@/bindings/bindings";
+import { Skeleton } from "@/components/Skeleton";
 import { rspc } from "@/state";
-import {
-  Button,
-  Divider,
-  Loader,
-  SimpleGrid,
-  Skeleton,
-  TextInput,
-} from "@mantine/core";
+import { Button, Divider, Loader, SimpleGrid, TextInput } from "@mantine/core";
 import { useForm } from "@mantine/form";
 import { notifications } from "@mantine/notifications";
 import { useEffect } from "react";
