@@ -30,6 +30,29 @@ export default function Page() {
   return <ProductInner productId={productId} />;
 }
 
+const fileSort = (a: string[], b: string[]) => {
+  if (a.length == b.length) {
+    for (let i = 0; i < a.length; i++) {
+      if (a[i] == b[i]) {
+        continue;
+      }
+      const aNum = a[i].match(/[0-9]+/g);
+      const bNum = b[i].match(/[0-9]+/g);
+      if (aNum && bNum) {
+        for (let j = 0; j < Math.min(aNum.length, bNum.length); j++) {
+          if (aNum[j] == bNum[j]) {
+            continue;
+          }
+          return parseInt(aNum[j]) - parseInt(bNum[j]);
+        }
+      } else {
+        return a[i] < b[i] ? -1 : 1;
+      }
+    }
+  }
+  return a.join("/").localeCompare(b.join("/"));
+};
+
 function ProductInner(props: { productId: string }) {
   const { data: files } = rspc.useQuery(["product.files", props.productId]);
   const { data: product } = rspc.useQuery(["product.get", props.productId]);
@@ -38,16 +61,20 @@ function ProductInner(props: { productId: string }) {
   const [imageIdx, setImageIdx] = useState<null | number>(null);
 
   const audioFiles =
-    files?.filter((file) => isAudioFile(file[file.length - 1] ?? "")).sort() ??
+    files?.filter((file) => isAudioFile(file[file.length - 1] ?? "")).sort(
+      fileSort,
+    ) ??
       [];
   const imageFiles =
-    files?.filter((file) => isImageFile(file[file.length - 1] ?? "")).sort() ??
+    files?.filter((file) => isImageFile(file[file.length - 1] ?? "")).sort(
+      fileSort,
+    ) ??
       [];
   const otherFiles = files?.filter(
     (file) =>
       !isAudioFile(file[file.length - 1] ?? "") &&
       !isImageFile(file[file.length - 1] ?? ""),
-  ).sort() ?? [];
+  ).sort(fileSort) ?? [];
 
   return files && product
     ? (

@@ -7,7 +7,7 @@ export function useStreamUrl() {
 
   return (productId: string, path: string[]) => {
     return `http://${SERVER_HOST}/stream/${productId}/${
-      path.join("/")
+      path.map((path) => encodeURIComponent(path)).join("/")
     }?token=${token}`;
   };
 }

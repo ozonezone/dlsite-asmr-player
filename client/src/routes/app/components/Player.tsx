@@ -7,10 +7,11 @@ import { ActionIcon } from "@mantine/core";
 import { XMarkIcon } from "@heroicons/react/24/solid";
 
 import { PlayerData, playerDataAtom } from "../state";
+import { useStreamUrl } from "../utils";
 
 export function Player(props: { playerData: NonNullable<PlayerData> }) {
-  const token = useAtomValue(authAtom)!;
   const setPlayerData = useSetAtom(playerDataAtom);
+  const getStreamUrl = useStreamUrl();
   const currentFile = props.playerData.queue[props.playerData.queueIdx];
   return (
     <AudioPlayer
@@ -24,9 +25,7 @@ export function Player(props: { playerData: NonNullable<PlayerData> }) {
           </ActionIcon>
         </div>
       }
-      src={`http://${SERVER_HOST}/stream/${props.playerData.productId}/${
-        currentFile.path.join("/")
-      }?token=${token}`}
+      src={getStreamUrl(props.playerData.productId, currentFile.path)}
       onClickNext={() => {
         if (props.playerData.queueIdx + 1 < props.playerData.queue.length) {
           setPlayerData({
