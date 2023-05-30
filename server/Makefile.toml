@@ -1,3 +1,5 @@
+env_files = [".env"]
+
 [config]
 default_to_workspace = false
 
@@ -16,17 +18,16 @@ script = "docker-compose up -d"
 [tasks.dev]
 run_task = { name = ["db-up", "dev-server"], parallel = false }
 
-[tasks.genquery]
+[tasks.entity-gen]
 script = """
-cornucopia live "postgresql://sample:password@localhost:5432/db"
-rustfmt --edition 2021 ./src/cornucopia.rs
+sea generate entity -u postgresql://sample:password@localhost:5432/db -o entity/src/entities/
 """
 
-[tasks.migrate]
-script = """
-atlas schema apply --url "postgresql://sample:password@localhost:5432/db?sslmode=disable" --to "file://schema.hcl"
-"""
-dependencies = ["db-up"]
+[tasks.mg-fresh]
+script = "sea migrate fresh"
+
+[tasks.mg]
+script = "sea migrate ${@}"
 
 [tasks.build-frontend]
 script = "cd ../client && pnpm build"
