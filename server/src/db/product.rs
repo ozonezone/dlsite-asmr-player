@@ -1,38 +1,25 @@
 use std::path::PathBuf;
 
 use chrono::Datelike;
-use cornucopia_async::Params;
-use deadpool_postgres::Pool;
 use dlsite::product::Product;
+use entity::entities::{circle, product, product_genre, product_user_genre};
+use migration::{Expr, PgFunc};
+use sea_orm::{
+    DatabaseConnection, DbErr, EntityTrait, QueryFilter, Set, TransactionError, TransactionTrait,
+};
 use tracing::error;
 
-use crate::cornucopia::queries::{
-    circle::{upsert_circle, UpsertCircleParams},
-    genre::{
-        insert_product_genre, upsert_genre, upsert_product_usergenre, InsertProductGenreParams,
-        UpsertGenreParams, UpsertProductUsergenreParams,
-    },
-    product::{
-        delete_product, delete_product_genre, delete_product_usergenre, upsert_product,
-        UpsertProductParams,
-    },
-};
-
 pub async fn create_product(
-    pool: &Pool,
+    pool: &DatabaseConnection,
     product: Product,
     path: PathBuf,
 ) -> Result<(), anyhow::Error> {
-    let mut client = pool.get().await?;
-    upsert_circle()
-        .params(
-            &client,
-            &UpsertCircleParams {
-                id: product.circle.id.clone(),
-                name: product.circle.name,
-            },
-        )
-        .await?;
+    circle::Entity::insert(circle::ActiveModel {
+        id: Set(product.circle.id.clone()),
+        name: Set(product.circle.name),
+    })
+    .exec(pool)
+    .await?;
 
     upsert_product()
         .params(
@@ -128,26 +115,40 @@ pub async fn create_product(
 }
 
 pub async fn delete_product_and_relations(
-    pool: &Pool,
+    pool: &DatabaseConnection,
     ids: &Vec<String>,
-) -> Result<(), anyhow::Error> {
-    let mut client = pool.get().await.map_err(|e| {
-        error!("Could not get client from pool");
-        e
-    })?;
-    let transaction = client.transaction().await.map_err(|e| {
-        error!("Could not start transaction");
-        e
-    })?;
+) -> Result<(), TransactionError<DbErr>> {
+    pool.transaction::<_, (), DbErr>(|txn| {
+        let ids = ids.clone();
+        Box::pin(async move {
+            product_genre::Entity::delete_many()
+                .filter(Expr::eq(
+                    Expr::val(ids.clone()),
+                    Expr::expr(PgFunc::any(Expr::col(product_genre::Column::ProductId))),
+                ))
+                .exec(txn)
+                .await?;
+            product_user_genre::Entity::delete_many()
+                .filter(Expr::eq(
+                    Expr::val(ids.clone()),
+                    Expr::expr(PgFunc::any(Expr::col(
+                        product_user_genre::Column::ProductId,
+                    ))),
+                ))
+                .exec(txn)
+                .await?;
+            product::Entity::delete_many()
+                .filter(Expr::eq(
+                    Expr::val(ids),
+                    Expr::expr(PgFunc::any(Expr::col(product::Column::Id))),
+                ))
+                .exec(txn)
+                .await?;
 
-    delete_product_genre().bind(&transaction, ids).await?;
-    delete_product_usergenre().bind(&transaction, ids).await?;
-    delete_product().bind(&transaction, ids).await?;
-
-    transaction.commit().await.map_err(|e| {
-        error!("Could not commit transaction: {}", e);
-        e
-    })?;
+            Ok(())
+        })
+    })
+    .await?;
 
     Ok(())
 }

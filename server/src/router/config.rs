@@ -1,4 +1,7 @@
-use crate::{config::Config, cornucopia::queries::user::change_password};
+use entity::entities::user;
+use sea_orm::{ColumnTrait, EntityTrait, QueryFilter};
+
+use crate::config::Config;
 
 use super::{utils::ToRspcError, RouterBuilder};
 
@@ -6,15 +9,14 @@ pub(crate) fn mount() -> RouterBuilder {
     <RouterBuilder>::new()
         .mutation("setPassword", |t| {
             t(|ctx, new_password: String| async move {
-                let client = ctx
-                    .pool
-                    .get()
-                    .await
-                    .to_rspc_internal_error("Cannot connect db")?;
-                change_password()
-                    .bind(&client, &new_password, &1)
-                    .await
-                    .to_rspc_internal_error("Could not update password")?;
+                user::Entity::update(user::ActiveModel {
+                    password: sea_orm::ActiveValue::Set(new_password.clone()),
+                    ..Default::default()
+                })
+                .filter(user::Column::Id.eq(1))
+                .exec(&ctx.pool)
+                .await
+                .to_rspc_internal_error("Could not update password")?;
 
                 Ok(())
             })

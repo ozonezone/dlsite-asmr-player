@@ -39,6 +39,7 @@ enum User {
     Table,
     Id,
     Name,
+    Password,
 }
 #[derive(Iden)]
 enum Genre {
@@ -89,8 +90,9 @@ impl MigrationTrait for Migration {
                 Table::create()
                     .table(User::Table)
                     .if_not_exists()
-                    .col(ColumnDef::new(User::Id).string().not_null().primary_key())
+                    .col(ColumnDef::new(User::Id).integer().not_null().primary_key())
                     .col(ColumnDef::new(User::Name).string().not_null())
+                    .col(ColumnDef::new(User::Password).string().not_null())
                     .to_owned(),
             )
             .await?;

@@ -1,15 +1,8 @@
 use std::collections::HashMap;
 
 use rspc::Type;
+use sea_orm::DbErr;
 use serde::{Deserialize, Serialize};
-
-use crate::cornucopia::queries::{
-    circle::{
-        count_circle_product, get_circle_product_name_asc, get_circle_product_name_desc,
-        get_circle_product_released_at_asc, get_circle_product_released_at_desc,
-    },
-    genre::{get_genres, get_usergenres},
-};
 
 use super::{
     common::{Age, Genre, ProductDbResult, SortOrder, SortType, UserGenre},
@@ -53,15 +46,8 @@ pub struct CircleBrowseParams {
 pub(crate) fn mount() -> RouterBuilder {
     <RouterBuilder>::new().query("browse", |t| {
         t(|ctx, params: CircleBrowseParams| async move {
-            let client = ctx
-                .pool
-                .get()
-                .await
-                .to_rspc_internal_error("Failed to get db client")?;
-
             let offset = (params.page - 1) * params.limit;
-            let result: Result<Vec<ProductDbResult>, tokio_postgres::Error> = match params.sort_type
-            {
+            let result: Result<Vec<ProductDbResult>, DbErr> = match params.sort_type {
                 SortType::Name => match params.sort_order {
                     SortOrder::Asc => get_circle_product_name_asc()
                         .bind(

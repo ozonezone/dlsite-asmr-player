@@ -20,7 +20,7 @@ run_task = { name = ["db-up", "dev-server"], parallel = false }
 
 [tasks.entity-gen]
 script = """
-sea generate entity -u postgresql://sample:password@localhost:5432/db -o entity/src/entities/
+sea generate entity -u postgresql://sample:password@localhost:5432/db -o entity/src/entities/ --with-serde both  --model-extra-derives "rspc::Type"
 """
 
 [tasks.mg-fresh]

@@ -1,16 +1,11 @@
 use std::{collections::HashMap, path::PathBuf, str::FromStr};
 
+use entity::entities::{circle, genre, product, product_genre};
+use migration::{Expr, PgFunc};
 use rspc::Type;
+use sea_orm::{EntityTrait, LoaderTrait, QueryFilter, QueryOrder, QuerySelect};
 use serde::{Deserialize, Serialize};
 use tracing::warn;
-
-use crate::cornucopia::queries::{
-    genre::{get_genre, get_genres, get_usergenre, get_usergenres},
-    product::{
-        count_product, get_product, get_product_name_asc, get_product_name_desc, get_product_path,
-        get_product_released_at_asc, get_product_released_at_desc,
-    },
-};
 
 use super::{
     common::{Age, Genre, ProductDbResult, SortOrder, SortType, UserGenre},
@@ -18,48 +13,18 @@ use super::{
     RouterBuilder,
 };
 
-#[derive(Type, Serialize)]
-pub struct ProductResult {
-    pub id: String,
-    pub name: String,
-    pub description: Option<String>,
-    pub series: Option<String>,
-    pub circle_id: String,
-    pub actor: Vec<String>,
-    pub author: Vec<String>,
-    pub illustrator: Vec<String>,
-    pub price: i32,
-    pub sale_count: i32,
-    pub age: Age,
-    pub released_at: String,
-    pub rating: Option<f64>,
-    pub rating_count: i32,
-    pub comment_count: i32,
-    pub path: String,
-    pub remote_image: Vec<String>,
-    pub circle_name: String,
-    pub genre: Vec<Genre>,
-    pub user_genre: Vec<UserGenre>,
-}
-
 #[derive(Deserialize, Type)]
 pub struct BrowseParams {
     sort_type: SortType,
     sort_order: SortOrder,
-    page: i32,
-    limit: i32,
+    page: u32,
+    limit: u32,
 }
 
 pub(crate) fn mount() -> RouterBuilder {
     <RouterBuilder>::new()
         .query("get", |t| {
             t(|ctx, product_id: String| async move {
-                let client = ctx
-                    .pool
-                    .get()
-                    .await
-                    .to_rspc_internal_error("Failed to get client")?;
-
                 let product = get_product()
                     .bind(&client, &product_id)
                     .one()
@@ -120,43 +85,18 @@ pub(crate) fn mount() -> RouterBuilder {
         })
         .query("browse", |t| {
             t(|ctx, params: BrowseParams| async move {
-                let client = ctx
-                    .pool
-                    .get()
-                    .await
-                    .to_rspc_internal_error("Failed to get client")?;
-
                 let offset = (params.page - 1) * params.limit;
-                let result: Result<Vec<ProductDbResult>, tokio_postgres::Error> =
-                    match params.sort_type {
-                        SortType::Name => match params.sort_order {
-                            SortOrder::Asc => get_product_name_asc()
-                                .bind(&client, &params.limit.into(), &offset.into())
-                                .all()
-                                .await
-                                .map(|res| res.into_iter().map(|res| res.into()).collect()),
-                            SortOrder::Desc => get_product_name_desc()
-                                .bind(&client, &params.limit.into(), &offset.into())
-                                .all()
-                                .await
-                                .map(|res| res.into_iter().map(|res| res.into()).collect()),
-                        },
-                        SortType::Date => match params.sort_order {
-                            SortOrder::Asc => get_product_released_at_asc()
-                                .bind(&client, &params.limit.into(), &offset.into())
-                                .all()
-                                .await
-                                .map(|res| res.into_iter().map(|res| res.into()).collect()),
-                            SortOrder::Desc => get_product_released_at_desc()
-                                .bind(&client, &params.limit.into(), &offset.into())
-                                .all()
-                                .await
-                                .map(|res| res.into_iter().map(|res| res.into()).collect()),
-                        },
-                    };
-                let result = result.to_rspc_internal_error("Failed to get products")?;
 
-                let mut genres: HashMap<String, Vec<Genre>> = HashMap::new();
+                let products = product::Entity::find()
+                    .order_by(params.sort_type.into(), params.sort_order.into())
+                    .limit(params.limit.into())
+                    .offset(offset.into())
+                    .all(&ctx.pool)
+                    .await?;
+                let ids = products.iter().map(|p| p.id.clone()).collect::<Vec<_>>();
+
+                let genres = products.load_many(product_genre::Entity, &ctx.pool).await?;
+
                 get_genres()
                     .bind(
                         &client,
@@ -240,14 +180,11 @@ pub(crate) fn mount() -> RouterBuilder {
         })
         .query("files", |t| {
             t(|ctx, product_id: String| async move {
-                let client = ctx
-                    .pool
-                    .get()
-                    .await
-                    .to_rspc_internal_error("Failed to get client")?;
-                let product_folder = get_product_path()
-                    .bind(&client, &product_id)
-                    .one()
+                let product_folder = product::Entity::find_by_id(product_id)
+                    .select_only()
+                    .column(product::Column::Path)
+                    .into_tuple()
+                    .one(&ctx.pool)
                     .await
                     .to_rspc_internal_error("Invalid product")?;
                 let product_folder =

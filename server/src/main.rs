@@ -6,34 +6,30 @@ use axum::{
     response::{IntoResponse, Response},
     routing::get,
 };
+use entity::entities::user;
+use migration::{
+    sea_orm::{Database, DatabaseConnection},
+    Migrator, MigratorTrait,
+};
 use rspc::integrations::httpz::Request;
 use rust_embed::RustEmbed;
-use std::{ops::DerefMut, sync::Arc};
+use sea_orm::{EntityTrait, Set};
+use std::sync::Arc;
 use tokio::{signal, sync::RwLock};
 use tracing::info;
 
 use crate::{
-    config::Config,
-    cornucopia::queries::user::{exist_user, insert_user},
-    middleware::auth_middleware,
-    router::RouterContext,
-    stream::AxumRouterState,
+    config::Config, middleware::auth_middleware, router::RouterContext, stream::AxumRouterState,
 };
 
 mod config;
-mod cornucopia;
 mod db;
 mod middleware;
-mod pool;
 mod router;
 mod scan;
 mod stream;
 
-mod embedded {
-    use refinery::embed_migrations;
-    embed_migrations!("migrations");
-}
-
+#[cfg(not(debug_assertions))]
 #[derive(RustEmbed)]
 #[folder = "../client/dist/"]
 struct Assets;
@@ -57,19 +53,19 @@ async fn main() -> Result<()> {
 
     let config = Arc::new(RwLock::new(config));
 
-    let pool = pool::create_pool().await?;
-
-    let mut client = pool.get().await?;
+    let db = Database::connect("protocol://username:password@host/database").await?;
 
     info!("Running database migrations");
-    embedded::migrations::runner()
-        .run_async(client.deref_mut().deref_mut())
-        .await?;
+    Migrator::up(&db, None).await?;
     info!("Database migrations completed");
 
-    if exist_user().bind(&client, &1).one().await? == 0 {
+    if user::Entity::find().one(&db).await?.is_none() {
         info!("Creating default admin user with password 'password'");
-        insert_user().bind(&client, &1, &"password").await?;
+        let user = user::ActiveModel {
+            id: Set(1),
+            password: Set("password".to_string()),
+            name: Set("admin".to_string()),
+        };
     }
 
     let router = router::mount();
@@ -83,14 +79,14 @@ async fn main() -> Result<()> {
                 .layer(from_fn_with_state(
                     AxumRouterState {
                         config: config.clone(),
-                        pool: pool.clone(),
+                        pool: db.clone(),
                     },
                     auth_middleware,
                 )),
         )
         .with_state(AxumRouterState {
             config: config.clone(),
-            pool: pool.clone(),
+            pool: db.clone(),
         })
         .nest(
             "/rspc",
@@ -105,7 +101,7 @@ async fn main() -> Result<()> {
 
                     RouterContext {
                         config: config.clone(),
-                        pool,
+                        pool: db,
                         token,
                         scan_status,
                     }
@@ -113,7 +109,7 @@ async fn main() -> Result<()> {
                 .axum(),
         );
 
-    // #[cfg(not(debug_assertions))]
+    #[cfg(not(debug_assertions))]
     let app = app.fallback(static_handler);
 
     let addr = "[::]:14567".parse::<std::net::SocketAddr>().unwrap(); // This listens on IPv6 and IPv4
@@ -130,6 +126,7 @@ async fn main() -> Result<()> {
     Ok(())
 }
 
+#[cfg(not(debug_assertions))]
 async fn static_handler(uri: Uri) -> Result<impl IntoResponse, StatusCode> {
     let path = uri.path().trim_start_matches('/');
 
@@ -146,6 +143,7 @@ async fn static_handler(uri: Uri) -> Result<impl IntoResponse, StatusCode> {
     }
 }
 
+#[cfg(not(debug_assertions))]
 async fn index_html() -> Result<Response, StatusCode> {
     if let Some(content) = Assets::get("index.html") {
         let body = boxed(Full::from(content.data));

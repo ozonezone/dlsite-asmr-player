@@ -1,10 +1,12 @@
-use crate::{cornucopia::queries::user::get_user, stream::AxumRouterState};
+use crate::stream::AxumRouterState;
 use axum::{
     extract::{Query, State},
     http::{Request, StatusCode},
     middleware::Next,
     response::IntoResponse,
 };
+use entity::entities::user;
+use sea_orm::EntityTrait;
 use serde::Deserialize;
 
 #[derive(Deserialize)]
@@ -18,17 +20,12 @@ pub(crate) async fn auth_middleware<B>(
     next: Next<B>,
 ) -> Result<impl IntoResponse, StatusCode> {
     if let Some(token) = query.token {
-        let client = state
-            .pool
-            .get()
-            .await
-            .map_err(|e| StatusCode::INTERNAL_SERVER_ERROR)?;
         if token
-            == get_user()
-                .bind(&client, &1)
-                .one()
+            == user::Entity::find_by_id(1)
+                .one(&state.pool)
                 .await
                 .map_err(|e| StatusCode::INTERNAL_SERVER_ERROR)?
+                .ok_or_else(|| StatusCode::INTERNAL_SERVER_ERROR)?
                 .password
         {
             let response = next.run(request).await;

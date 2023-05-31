@@ -2,22 +2,23 @@ use std::{collections::VecDeque, path::PathBuf, sync::Arc};
 
 use axum::{
     body::Body,
-    extract::{Path, State},
+    extract::State,
     http::{Request, StatusCode},
     response::IntoResponse,
 };
-use deadpool_postgres::Pool;
+use entity::entities::product;
 use sanitize_filename::sanitize;
+use sea_orm::{DatabaseConnection, EntityTrait};
 use tokio::sync::RwLock;
 use tower::ServiceExt;
 use tower_http::services::ServeFile;
 
-use crate::{config::Config, cornucopia::queries::product::get_product_path};
+use crate::config::Config;
 
 #[derive(Clone)]
 pub(crate) struct AxumRouterState {
     pub config: Arc<RwLock<Config>>,
-    pub pool: Pool,
+    pub pool: DatabaseConnection,
 }
 
 pub(super) async fn stream(
@@ -33,22 +34,22 @@ pub(super) async fn stream(
     }
     paths.pop_front();
     let product_id = paths.pop_front().unwrap();
-    let client = state.pool.get().await.map_err(|e| {
-        (
-            StatusCode::INTERNAL_SERVER_ERROR,
-            format!("Failed to get client from pool: {:?}", e),
-        )
-    })?;
-    let product_root_path = get_product_path()
-        .bind(&client, &product_id)
-        .one()
+    let product_root_path = product::Entity::find_by_id(product_id)
+        .one(&state.pool)
         .await
         .map_err(|e| {
             (
                 StatusCode::INTERNAL_SERVER_ERROR,
                 format!("Failed to get product path: {:?}", e),
             )
-        })?;
+        })?
+        .ok_or_else(|| {
+            (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "Product not found".to_string(),
+            )
+        })?
+        .path;
 
     let mut file_path = PathBuf::from(&product_root_path);
     paths.into_iter().for_each(|path| {

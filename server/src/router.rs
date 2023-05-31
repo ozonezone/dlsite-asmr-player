@@ -1,10 +1,11 @@
 use std::sync::Arc;
 
-use deadpool_postgres::Pool;
+use entity::entities::user;
 use rspc::{ErrorCode, Router};
+use sea_orm::{DatabaseConnection, EntityTrait};
 use tokio::sync::RwLock;
 
-use crate::{config::Config, cornucopia::queries::user::get_user};
+use crate::config::Config;
 
 use self::utils::ToRspcError;
 
@@ -19,7 +20,7 @@ type RouterBuilder = rspc::RouterBuilder<RouterContext>;
 
 pub(crate) struct RouterContext {
     pub config: Arc<RwLock<Config>>,
-    pub pool: Pool,
+    pub pool: DatabaseConnection,
     pub token: Option<String>,
     pub scan_status: Arc<RwLock<ScanStatus>>,
 }
@@ -42,17 +43,16 @@ pub(crate) fn mount() -> Arc<Router<RouterContext>> {
         .query("ping", |t| t(|_, _: ()| "pong"))
         .middleware(|mw| {
             mw.middleware(|mw| async move {
-                let client = mw
-                    .ctx
-                    .pool
-                    .get()
-                    .await
-                    .to_rspc_internal_error("Cannot connect db")?;
-                let password = get_user()
-                    .bind(&client, &1)
-                    .one()
+                let password = user::Entity::find_by_id(1)
+                    .one(&mw.ctx.pool)
                     .await
                     .to_rspc_internal_error("Failed to get user data")?
+                    .ok_or_else(|| {
+                        rspc::Error::new(
+                            ErrorCode::InternalServerError,
+                            "No admin user".to_string(),
+                        )
+                    })?
                     .password;
                 match &mw.ctx.token {
                     Some(token) => {

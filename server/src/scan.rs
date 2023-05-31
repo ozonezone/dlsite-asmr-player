@@ -1,16 +1,14 @@
 use std::path::PathBuf;
 
-use deadpool_postgres::Pool;
+use entity::entities::product;
 use futures::stream::StreamExt;
 use once_cell::sync::Lazy;
 use regex::Regex;
+use sea_orm::{DatabaseConnection, EntityTrait, QuerySelect};
 use tracing::{debug, error, info, warn};
 use walkdir::WalkDir;
 
-use crate::{
-    cornucopia::queries::product::product_ids,
-    db::product::{create_product, delete_product_and_relations},
-};
+use crate::db::product::{create_product, delete_product_and_relations};
 
 static DLSITE_FOLDER_REGEX: Lazy<Regex> = Lazy::new(|| regex::Regex::new(r"(?i)RJ\d+").unwrap());
 
@@ -19,13 +17,15 @@ static DLSITE_FOLDER_REGEX: Lazy<Regex> = Lazy::new(|| regex::Regex::new(r"(?i)R
 /// # Arguments
 /// * `folders` - List of folders to scan
 /// * `force` - Force fetch metadata for each RJ folder even if the metadata already exists in db.
-pub async fn scan(folders: &Vec<PathBuf>, force: bool, pool: &Pool) -> anyhow::Result<()> {
+pub async fn scan(
+    folders: &Vec<PathBuf>,
+    force: bool,
+    pool: &DatabaseConnection,
+) -> anyhow::Result<()> {
     info!("Starting scan");
     if force {
         info!("Force scan enabled. Data will be overwritten.");
     }
-
-    let client = pool.get().await?;
 
     let local_available_id_and_paths = scan_rj_folder(folders).await;
 
@@ -33,7 +33,12 @@ pub async fn scan(folders: &Vec<PathBuf>, force: bool, pool: &Pool) -> anyhow::R
         .iter()
         .map(|(id, _)| id.to_string())
         .collect::<Vec<_>>();
-    let db_available_ids = product_ids().bind(&client).all().await?;
+    let db_available_ids = product::Entity::find()
+        .select_only()
+        .column(product::Column::Id)
+        .into_tuple()
+        .all(pool)
+        .await?;
     debug!("{} products already in db", db_available_ids.len());
 
     let ids_to_fetch = if force {
@@ -44,7 +49,7 @@ pub async fn scan(folders: &Vec<PathBuf>, force: bool, pool: &Pool) -> anyhow::R
             .filter(|(id, _)| {
                 !db_available_ids
                     .iter()
-                    .any(|db_id| db_id.to_uppercase() == id.to_uppercase())
+                    .any(|db_id: &String| db_id.to_uppercase() == id.to_uppercase())
             })
             .collect::<Vec<_>>()
     };
@@ -154,16 +159,4 @@ async fn scan_rj_folder(paths: &Vec<PathBuf>) -> Vec<(String, PathBuf)> {
     info!("Found {} RJ folders", id_paths.len());
 
     id_paths
-}
-
-impl From<dlsite::product::AgeRating> for crate::cornucopia::types::public::Age {
-    fn from(value: dlsite::product::AgeRating) -> Self {
-        use crate::cornucopia::types::public::Age;
-        use dlsite::product::AgeRating;
-        match value {
-            AgeRating::AllAges => Age::all_ages,
-            AgeRating::R => Age::r,
-            AgeRating::Adult => Age::adult,
-        }
-    }
 }
