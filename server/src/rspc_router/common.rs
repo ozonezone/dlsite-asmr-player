@@ -47,4 +47,5 @@ pub struct ProductResponse {
     pub product: product::Model,
     pub genre: Vec<Genre>,
     pub user_genre: Vec<UserGenre>,
+    pub circle_name: String,
 }

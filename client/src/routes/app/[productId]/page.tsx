@@ -79,11 +79,11 @@ function ProductInner(props: { productId: string }) {
   return files && product
     ? (
       <div className="flex flex-col gap-3">
-        <Title order={2}>{product.name}</Title>
+        <Title order={2}>{product.product.name}</Title>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">
           <ImageGallery
             showPlayButton={false}
-            items={product.remote_image.map((url) => {
+            items={product.product.image.map((url) => {
               return {
                 original: url,
                 thumbnail: url,
@@ -98,21 +98,21 @@ function ProductInner(props: { productId: string }) {
                   <td>
                     <a
                       className="font-medium text-blue-600 dark:text-blue-500 hover:underline"
-                      href={`https://www.dlsite.com/maniax/work/=/product_id/${product.id}.html`}
+                      href={`https://www.dlsite.com/maniax/work/=/product_id/${product.product.id}.html`}
                     >
-                      {product.id}
+                      {product.product.id}
                     </a>
                   </td>
                 </tr>
                 <tr>
                   <td>対象年齢</td>
                   <td>
-                    <AgeBadge age={product.age} />
+                    <AgeBadge age={product.product.age} />
                   </td>
                 </tr>
                 <tr>
                   <td>販売日</td>
-                  <td>{product.released_at}</td>
+                  <td>{product.product.released_at}</td>
                 </tr>
                 <tr>
                   <td>サークル</td>
@@ -120,11 +120,11 @@ function ProductInner(props: { productId: string }) {
                 </tr>
                 <tr>
                   <td>シリーズ</td>
-                  <td>{product.series ?? "-"}</td>
+                  <td>{product.product.series ?? "-"}</td>
                 </tr>
                 <tr>
                   <td>声優</td>
-                  <td>{product.actor.join(", ")}</td>
+                  <td>{product.product.actor.join(", ")}</td>
                 </tr>
                 <tr>
                   <td>ジャンル</td>

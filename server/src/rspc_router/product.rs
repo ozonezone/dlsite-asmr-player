@@ -1,6 +1,6 @@
 use std::{collections::HashMap, path::PathBuf, str::FromStr};
 
-use entity::entities::{genre, product, product_genre, product_user_genre};
+use entity::entities::{circle, genre, product, product_genre, product_user_genre};
 use migration::{Expr, PgFunc};
 use rspc::Type;
 use sea_orm::{ColumnTrait, EntityTrait, PaginatorTrait, QueryFilter, QueryOrder, QuerySelect};
@@ -26,11 +26,18 @@ pub(crate) fn mount() -> RouterBuilder {
         .query("get", |t| {
             t(|ctx, product_id: String| async move {
                 let product = product::Entity::find()
-                    .filter(product::Column::Id.eq(product_id))
+                    .filter(product::Column::Id.eq(product_id.clone()))
                     .one(&ctx.pool)
                     .await
                     .to_rspc_internal_error("Failed to find product")?
                     .to_rspc_not_found("No product found")?;
+
+                let circle_name = circle::Entity::find_by_id(product.circle_id.clone())
+                    .one(&ctx.pool)
+                    .await
+                    .to_rspc_internal_error("Failed to find circle")?
+                    .to_rspc_not_found("No circle found")?
+                    .name;
 
                 let genre = product_genre::Entity::find()
                     .find_also_related(genre::Entity)
@@ -39,7 +46,7 @@ pub(crate) fn mount() -> RouterBuilder {
                     .await
                     .to_rspc_internal_error("Failed to get genres")?
                     .into_iter()
-                    .filter_map(|(pg, g)| {
+                    .filter_map(|(_, g)| {
                         if let Some(g) = g {
                             Some(Genre {
                                 id: g.id,
@@ -76,6 +83,7 @@ pub(crate) fn mount() -> RouterBuilder {
                     product,
                     genre,
                     user_genre,
+                    circle_name,
                 })
             })
         })
@@ -90,17 +98,18 @@ pub(crate) fn mount() -> RouterBuilder {
                     )
                     .limit(u64::from(params.limit))
                     .offset(u64::from(offset))
+                    .find_also_related(circle::Entity)
                     .all(&ctx.pool)
                     .await
                     .to_rspc_internal_error("Failed to get products")?;
-                let ids = products.iter().map(|p| p.id.clone()).collect::<Vec<_>>();
+                let ids = products.iter().map(|p| p.0.id.clone()).collect::<Vec<_>>();
+
+                dbg!(&ids);
 
                 let mut genres_map = HashMap::new();
-                let genres = product_genre::Entity::find()
+                product_genre::Entity::find()
                     .find_also_related(genre::Entity)
-                    .filter(Expr::val(ids.clone()).eq(Expr::expr(PgFunc::any(Expr::col(
-                        product_genre::Column::ProductId,
-                    )))))
+                    .filter(product_genre::Column::ProductId.is_in(ids.clone()))
                     .all(&ctx.pool)
                     .await
                     .to_rspc_internal_error("Failed to get genres")?
@@ -108,7 +117,7 @@ pub(crate) fn mount() -> RouterBuilder {
                     .for_each(|(pg, g)| {
                         if let Some(g) = g {
                             genres_map
-                                .entry(pg.product_id.clone())
+                                .entry(pg.product_id)
                                 .or_insert_with(Vec::new)
                                 .push(Genre {
                                     id: g.id,
@@ -117,11 +126,9 @@ pub(crate) fn mount() -> RouterBuilder {
                         }
                     });
                 let mut user_genres_map = HashMap::new();
-                let genres = product_user_genre::Entity::find()
+                product_user_genre::Entity::find()
                     .find_also_related(genre::Entity)
-                    .filter(Expr::val(ids.clone()).eq(Expr::expr(PgFunc::any(Expr::col(
-                        product_genre::Column::ProductId,
-                    )))))
+                    .filter(product_user_genre::Column::ProductId.is_in(ids.clone()))
                     .all(&ctx.pool)
                     .await
                     .to_rspc_internal_error("Failed to get user genres")?
@@ -142,9 +149,10 @@ pub(crate) fn mount() -> RouterBuilder {
                 let products = products
                     .into_iter()
                     .map(|product| ProductResponse {
-                        product,
-                        genre: genres_map.remove(&product.id).unwrap_or_default(),
-                        user_genre: user_genres_map.remove(&product.id).unwrap_or_default(),
+                        genre: genres_map.remove(&product.0.id).unwrap_or_default(),
+                        user_genre: user_genres_map.remove(&product.0.id).unwrap_or_default(),
+                        product: product.0,
+                        circle_name: product.1.map(|p| p.name).unwrap_or_else(|| "".to_string()),
                     })
                     .collect::<Vec<_>>();
 

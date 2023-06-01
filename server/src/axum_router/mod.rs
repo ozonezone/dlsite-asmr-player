@@ -11,16 +11,16 @@ mod frontend;
 mod middleware;
 mod stream;
 
-pub fn mount(config: Arc<RwLock<Config>>, db: DatabaseConnection) -> Router<AxumRouterState> {
+pub(crate) fn mount(
+    config: Arc<RwLock<Config>>,
+    db: DatabaseConnection,
+) -> Router<AxumRouterState> {
     let router = axum::Router::new().nest(
         "/stream",
         axum::Router::new()
             .fallback(get(stream::stream))
             .layer(from_fn_with_state(
-                AxumRouterState {
-                    config: config.clone(),
-                    pool: db.clone(),
-                },
+                AxumRouterState { config, pool: db },
                 middleware::auth_middleware,
             )),
     );

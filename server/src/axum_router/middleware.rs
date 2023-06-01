@@ -24,8 +24,8 @@ pub(crate) async fn auth_middleware<B>(
             == user::Entity::find_by_id(1)
                 .one(&state.pool)
                 .await
-                .map_err(|e| StatusCode::INTERNAL_SERVER_ERROR)?
-                .ok_or_else(|| StatusCode::INTERNAL_SERVER_ERROR)?
+                .map_err(|_e| StatusCode::INTERNAL_SERVER_ERROR)?
+                .ok_or(StatusCode::INTERNAL_SERVER_ERROR)?
                 .password
         {
             let response = next.run(request).await;

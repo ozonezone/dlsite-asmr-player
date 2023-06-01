@@ -97,7 +97,7 @@ pub async fn scan(
         .iter()
         .filter(|res| {
             if let Err(err) = res {
-                error!("Failed to insert update product: {}", err);
+                error!("Failed to insert or update product: {}", err);
                 false
             } else {
                 true

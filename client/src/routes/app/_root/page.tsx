@@ -1,4 +1,4 @@
-import { ProductResult, SortOrder, SortType } from "@/bindings/bindings";
+import { ProductResponse, SortOrder, SortType } from "@/bindings/bindings";
 import { rspc } from "@/state";
 import {
   Card,
@@ -70,7 +70,7 @@ export default function Page() {
         ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2">
             {data[0].map((data) => {
-              return <ItemCard product={data} key={data.id} />;
+              return <ItemCard product={data} key={data.product.id} />;
             })}
           </div>
         )
@@ -79,13 +79,15 @@ export default function Page() {
   );
 }
 
-function ItemCard({ product }: { product: ProductResult }) {
+function ItemCard(
+  { product: { product, circle_name } }: { product: ProductResponse },
+) {
   return (
     <Link to={`/app/product/${product.id}`}>
       <Card shadow="sm" padding="lg" radius="md" withBorder>
         <Card.Section>
           <Image
-            src={product.remote_image[0]}
+            src={product.image[0]}
             height={160}
           />
         </Card.Section>
@@ -94,7 +96,7 @@ function ItemCard({ product }: { product: ProductResult }) {
           <Text weight={500}>{product.name}</Text>
           <AgeBadge age={product.age} />
           <Text size="sm">{product.released_at}</Text>
-          <Text size="sm">{product.circle_name}</Text>
+          <Text size="sm">{circle_name}</Text>
         </Group>
       </Card>
     </Link>

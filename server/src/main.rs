@@ -2,7 +2,7 @@ use anyhow::Result;
 use axum::Router;
 use entity::entities::user;
 use migration::{sea_orm::Database, Migrator, MigratorTrait};
-use sea_orm::{DatabaseConnection, EntityTrait, Set};
+use sea_orm::{ConnectOptions, DatabaseConnection, EntityTrait, Set};
 use std::sync::Arc;
 use tokio::{signal, sync::RwLock};
 use tracing::info;
@@ -16,7 +16,7 @@ mod rspc_router;
 mod scan;
 
 #[derive(Clone)]
-struct AxumRouterState {
+pub(crate) struct AxumRouterState {
     pub config: Arc<RwLock<Config>>,
     pub pool: DatabaseConnection,
 }
@@ -40,7 +40,9 @@ async fn main() -> Result<()> {
 
     let config = Arc::new(RwLock::new(config));
 
-    let db = Database::connect("protocol://username:password@host/database").await?;
+    let mut opt = ConnectOptions::new(std::env::var("DATABASE_URL").unwrap());
+    opt.sqlx_logging_level(tracing::log::LevelFilter::Error);
+    let db = Database::connect(opt).await?;
 
     info!("Running database migrations");
     Migrator::up(&db, None).await?;
@@ -48,20 +50,19 @@ async fn main() -> Result<()> {
 
     if user::Entity::find().one(&db).await?.is_none() {
         info!("Creating default admin user with password 'password'");
-        let user = user::ActiveModel {
+        user::Entity::insert(user::ActiveModel {
             id: Set(1),
             password: Set("password".to_string()),
             name: Set("admin".to_string()),
-        };
+        })
+        .exec(&db)
+        .await?;
     }
 
     let app = Router::new()
-        .merge(rspc_router::mount(config, db))
-        .merge(axum_router::mount(config, db))
-        .with_state(AxumRouterState {
-            config: config.clone(),
-            pool: db.clone(),
-        });
+        .merge(rspc_router::mount(config.clone(), db.clone()))
+        .merge(axum_router::mount(config.clone(), db.clone()))
+        .with_state(AxumRouterState { config, pool: db });
 
     let addr = "[::]:14567".parse::<std::net::SocketAddr>().unwrap();
     println!("listening on http://{}/rspc", addr);
