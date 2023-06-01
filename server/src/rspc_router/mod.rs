@@ -21,7 +21,7 @@ type RouterBuilder = rspc::RouterBuilder<RouterContext>;
 
 pub(crate) struct RouterContext {
     pub config: Arc<RwLock<Config>>,
-    pub pool: DatabaseConnection,
+    pub db: DatabaseConnection,
     pub token: Option<String>,
     pub scan_status: Arc<RwLock<ScanStatus>>,
 }
@@ -50,7 +50,7 @@ pub(crate) fn mount(
 
                 RouterContext {
                     config: config.clone(),
-                    pool: db,
+                    db,
                     token,
                     scan_status,
                 }
@@ -73,7 +73,7 @@ fn rspc_mount() -> Arc<Router<RouterContext>> {
         .middleware(|mw| {
             mw.middleware(|mw| async move {
                 let password = user::Entity::find_by_id(1)
-                    .one(&mw.ctx.pool)
+                    .one(&mw.ctx.db)
                     .await
                     .to_rspc_internal_error("Failed to get user data")?
                     .ok_or_else(|| {

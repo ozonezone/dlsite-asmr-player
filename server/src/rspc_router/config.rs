@@ -14,7 +14,7 @@ pub(crate) fn mount() -> RouterBuilder {
                     ..Default::default()
                 })
                 .filter(user::Column::Id.eq(1))
-                .exec(&ctx.pool)
+                .exec(&ctx.db)
                 .await
                 .to_rspc_internal_error("Could not update password")?;
 

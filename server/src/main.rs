@@ -17,8 +17,7 @@ mod scan;
 
 #[derive(Clone)]
 pub(crate) struct AxumRouterState {
-    pub config: Arc<RwLock<Config>>,
-    pub pool: DatabaseConnection,
+    pub db: DatabaseConnection,
 }
 
 #[tokio::main]
@@ -61,8 +60,8 @@ async fn main() -> Result<()> {
 
     let app = Router::new()
         .merge(rspc_router::mount(config.clone(), db.clone()))
-        .merge(axum_router::mount(config.clone(), db.clone()))
-        .with_state(AxumRouterState { config, pool: db });
+        .merge(axum_router::mount(db.clone()))
+        .with_state(AxumRouterState { db });
 
     let addr = "[::]:14567".parse::<std::net::SocketAddr>().unwrap();
     println!("listening on http://{}/rspc", addr);

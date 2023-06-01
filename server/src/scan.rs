@@ -20,7 +20,7 @@ static DLSITE_FOLDER_REGEX: Lazy<Regex> = Lazy::new(|| regex::Regex::new(r"(?i)R
 pub async fn scan(
     folders: &Vec<PathBuf>,
     force: bool,
-    pool: &DatabaseConnection,
+    db: &DatabaseConnection,
 ) -> anyhow::Result<()> {
     info!("Starting scan");
     if force {
@@ -37,7 +37,7 @@ pub async fn scan(
         .select_only()
         .column(product::Column::Id)
         .into_tuple()
-        .all(pool)
+        .all(db)
         .await?;
     debug!("{} products already in db", db_available_ids.len());
 
@@ -89,7 +89,7 @@ pub async fn scan(
     let db_product_update_result = futures::future::join_all(
         metadata
             .into_iter()
-            .map(|(product, path)| async move { create_product(pool, product, path).await }),
+            .map(|(product, path)| async move { create_product(db, product, path).await }),
     )
     .await;
 
@@ -116,7 +116,7 @@ pub async fn scan(
         })
         .collect::<Vec<_>>();
 
-    delete_product_and_relations(pool, &product_ids_to_delete)
+    delete_product_and_relations(db, &product_ids_to_delete)
         .await
         .map_err(|e| {
             error!("Failed to delete products and relations: {}", e);

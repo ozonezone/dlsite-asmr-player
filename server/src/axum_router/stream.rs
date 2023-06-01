@@ -28,7 +28,7 @@ pub(super) async fn stream(
     paths.pop_front();
     let product_id = paths.pop_front().unwrap();
     let product_root_path = product::Entity::find_by_id(product_id)
-        .one(&state.pool)
+        .one(&state.db)
         .await
         .map_err(|e| {
             (

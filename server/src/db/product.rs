@@ -2,13 +2,14 @@ use std::path::PathBuf;
 
 use dlsite::product::Product;
 use entity::entities::{circle, genre, product, product_genre, product_user_genre};
-use migration::{Expr, OnConflict, PgFunc};
+use migration::OnConflict;
 use sea_orm::{
-    DatabaseConnection, DbErr, EntityTrait, QueryFilter, Set, TransactionError, TransactionTrait,
+    ColumnTrait, DatabaseConnection, DbErr, EntityTrait, QueryFilter, Set, TransactionError,
+    TransactionTrait,
 };
 
 pub async fn create_product(
-    pool: &DatabaseConnection,
+    db: &DatabaseConnection,
     product: Product,
     path: PathBuf,
 ) -> Result<(), anyhow::Error> {
@@ -21,7 +22,7 @@ pub async fn create_product(
             .update_columns([circle::Column::Name])
             .to_owned(),
     )
-    .exec(pool)
+    .exec(db)
     .await?;
 
     product::Entity::insert(product::ActiveModel {
@@ -73,7 +74,7 @@ pub async fn create_product(
             ])
             .to_owned(),
     )
-    .exec(pool)
+    .exec(db)
     .await?;
 
     let genre_on_conflict = OnConflict::column(genre::Column::Id)
@@ -83,7 +84,7 @@ pub async fn create_product(
     for genre in product.genre {
         let product_id = product.id.clone();
         let genre_on_conflict = genre_on_conflict.clone();
-        pool.transaction::<_, (), DbErr>(|txn| {
+        db.transaction::<_, (), DbErr>(|txn| {
             Box::pin(async move {
                 genre::Entity::insert(genre::ActiveModel {
                     id: Set(genre.id.clone()),
@@ -117,7 +118,7 @@ pub async fn create_product(
     for (genre, count) in product.reviewer_genre {
         let product_id = product.id.clone();
         let genre_on_conflict = genre_on_conflict.clone();
-        pool.transaction::<_, (), DbErr>(|txn| {
+        db.transaction::<_, (), DbErr>(|txn| {
             Box::pin(async move {
                 genre::Entity::insert(genre::ActiveModel {
                     id: Set(genre.id.clone()),
@@ -153,36 +154,25 @@ pub async fn create_product(
 }
 
 pub async fn delete_product_and_relations(
-    pool: &DatabaseConnection,
+    db: &DatabaseConnection,
     ids: &Vec<String>,
 ) -> Result<(), TransactionError<DbErr>> {
     if ids.is_empty() {
         return Ok(());
     }
-    pool.transaction::<_, (), DbErr>(|txn| {
+    db.transaction::<_, (), DbErr>(|txn| {
         let ids = ids.clone();
         Box::pin(async move {
             product_genre::Entity::delete_many()
-                .filter(Expr::eq(
-                    Expr::val(ids.clone()),
-                    Expr::expr(PgFunc::any(Expr::col(product_genre::Column::ProductId))),
-                ))
+                .filter(product_genre::Column::ProductId.is_in(ids.clone()))
                 .exec(txn)
                 .await?;
             product_user_genre::Entity::delete_many()
-                .filter(Expr::eq(
-                    Expr::val(ids.clone()),
-                    Expr::expr(PgFunc::any(Expr::col(
-                        product_user_genre::Column::ProductId,
-                    ))),
-                ))
+                .filter(product_user_genre::Column::ProductId.is_in(ids.clone()))
                 .exec(txn)
                 .await?;
             product::Entity::delete_many()
-                .filter(Expr::eq(
-                    Expr::val(ids),
-                    Expr::expr(PgFunc::any(Expr::col(product::Column::Id))),
-                ))
+                .filter(product::Column::Id.is_in(ids))
                 .exec(txn)
                 .await?;
 

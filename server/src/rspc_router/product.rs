@@ -1,7 +1,6 @@
 use std::{collections::HashMap, path::PathBuf, str::FromStr};
 
 use entity::entities::{circle, genre, product, product_genre, product_user_genre};
-use migration::{Expr, PgFunc};
 use rspc::Type;
 use sea_orm::{ColumnTrait, EntityTrait, PaginatorTrait, QueryFilter, QueryOrder, QuerySelect};
 use serde::Deserialize;
@@ -27,13 +26,13 @@ pub(crate) fn mount() -> RouterBuilder {
             t(|ctx, product_id: String| async move {
                 let product = product::Entity::find()
                     .filter(product::Column::Id.eq(product_id.clone()))
-                    .one(&ctx.pool)
+                    .one(&ctx.db)
                     .await
                     .to_rspc_internal_error("Failed to find product")?
                     .to_rspc_not_found("No product found")?;
 
                 let circle_name = circle::Entity::find_by_id(product.circle_id.clone())
-                    .one(&ctx.pool)
+                    .one(&ctx.db)
                     .await
                     .to_rspc_internal_error("Failed to find circle")?
                     .to_rspc_not_found("No circle found")?
@@ -42,7 +41,7 @@ pub(crate) fn mount() -> RouterBuilder {
                 let genre = product_genre::Entity::find()
                     .find_also_related(genre::Entity)
                     .filter(product_genre::Column::ProductId.eq(product_id.clone()))
-                    .all(&ctx.pool)
+                    .all(&ctx.db)
                     .await
                     .to_rspc_internal_error("Failed to get genres")?
                     .into_iter()
@@ -61,7 +60,7 @@ pub(crate) fn mount() -> RouterBuilder {
                 let user_genre = product_user_genre::Entity::find()
                     .find_also_related(genre::Entity)
                     .filter(product_user_genre::Column::ProductId.eq(product_id.clone()))
-                    .all(&ctx.pool)
+                    .all(&ctx.db)
                     .await
                     .to_rspc_internal_error("Failed to get user genres")?
                     .into_iter()
@@ -99,7 +98,7 @@ pub(crate) fn mount() -> RouterBuilder {
                     .limit(u64::from(params.limit))
                     .offset(u64::from(offset))
                     .find_also_related(circle::Entity)
-                    .all(&ctx.pool)
+                    .all(&ctx.db)
                     .await
                     .to_rspc_internal_error("Failed to get products")?;
                 let ids = products.iter().map(|p| p.0.id.clone()).collect::<Vec<_>>();
@@ -110,7 +109,7 @@ pub(crate) fn mount() -> RouterBuilder {
                 product_genre::Entity::find()
                     .find_also_related(genre::Entity)
                     .filter(product_genre::Column::ProductId.is_in(ids.clone()))
-                    .all(&ctx.pool)
+                    .all(&ctx.db)
                     .await
                     .to_rspc_internal_error("Failed to get genres")?
                     .into_iter()
@@ -129,7 +128,7 @@ pub(crate) fn mount() -> RouterBuilder {
                 product_user_genre::Entity::find()
                     .find_also_related(genre::Entity)
                     .filter(product_user_genre::Column::ProductId.is_in(ids.clone()))
-                    .all(&ctx.pool)
+                    .all(&ctx.db)
                     .await
                     .to_rspc_internal_error("Failed to get user genres")?
                     .into_iter()
@@ -157,7 +156,7 @@ pub(crate) fn mount() -> RouterBuilder {
                     .collect::<Vec<_>>();
 
                 let item_count: i32 = product::Entity::find()
-                    .count(&ctx.pool)
+                    .count(&ctx.db)
                     .await
                     .to_rspc_internal_error("Failed to count items")?
                     .try_into()
@@ -171,7 +170,7 @@ pub(crate) fn mount() -> RouterBuilder {
                     .select_only()
                     .column(product::Column::Path)
                     .into_tuple()
-                    .one(&ctx.pool)
+                    .one(&ctx.db)
                     .await
                     .to_rspc_internal_error("Invalid product")?
                     .to_rspc_not_found("No product found")?;
