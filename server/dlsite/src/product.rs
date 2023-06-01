@@ -30,7 +30,7 @@ pub struct Product {
     pub series: Option<String>,
     pub sale_count: i32,
     pub review_count: Option<i32>,
-    pub rating: Option<f64>,
+    pub rating: Option<f32>,
     pub rate_count: Option<i32>,
     pub images: Vec<Url>,
     pub people: ProductPeople,

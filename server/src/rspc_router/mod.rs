@@ -1,15 +1,16 @@
 use std::sync::Arc;
 
 use entity::entities::user;
+use rspc::integrations::httpz::Request;
 use rspc::{ErrorCode, Router};
 use sea_orm::{DatabaseConnection, EntityTrait};
 use tokio::sync::RwLock;
 
 use crate::config::Config;
+use crate::AxumRouterState;
 
-use self::utils::ToRspcError;
+use self::utils::ToRspcInternalError;
 
-mod circle;
 mod common;
 mod config;
 mod product;
@@ -30,7 +31,35 @@ pub(crate) struct ScanStatus {
     pub is_scanning: bool,
 }
 
-pub(crate) fn mount() -> Arc<Router<RouterContext>> {
+pub(crate) fn mount(
+    config: Arc<RwLock<Config>>,
+    db: DatabaseConnection,
+) -> axum::Router<AxumRouterState> {
+    let scan_status = Arc::new(RwLock::new(ScanStatus { is_scanning: false }));
+
+    axum::Router::new().nest(
+        "/rspc",
+        rspc_mount()
+            .endpoint(move |req: Request| {
+                let token = req.query_pairs().and_then(|pairs| {
+                    pairs
+                        .into_iter()
+                        .find(|(key, _)| key == "token")
+                        .map(|(_, value)| value.to_string())
+                });
+
+                RouterContext {
+                    config: config.clone(),
+                    pool: db,
+                    token,
+                    scan_status,
+                }
+            })
+            .axum(),
+    )
+}
+
+fn rspc_mount() -> Arc<Router<RouterContext>> {
     let config = rspc::Config::new()
         .set_ts_bindings_header("/* eslint-disable */")
         .export_ts_bindings(
@@ -76,7 +105,6 @@ pub(crate) fn mount() -> Arc<Router<RouterContext>> {
         .merge("config.", config::mount())
         .merge("scan.", scan::mount())
         .merge("product.", product::mount())
-        .merge("circle.", circle::mount())
         .build()
         .arced()
 }

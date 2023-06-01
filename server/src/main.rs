@@ -1,38 +1,25 @@
 use anyhow::Result;
-use axum::{
-    body::{boxed, Full},
-    http::{header, StatusCode, Uri},
-    middleware::from_fn_with_state,
-    response::{IntoResponse, Response},
-    routing::get,
-};
+use axum::Router;
 use entity::entities::user;
-use migration::{
-    sea_orm::{Database, DatabaseConnection},
-    Migrator, MigratorTrait,
-};
-use rspc::integrations::httpz::Request;
-use rust_embed::RustEmbed;
-use sea_orm::{EntityTrait, Set};
+use migration::{sea_orm::Database, Migrator, MigratorTrait};
+use sea_orm::{DatabaseConnection, EntityTrait, Set};
 use std::sync::Arc;
 use tokio::{signal, sync::RwLock};
 use tracing::info;
 
-use crate::{
-    config::Config, middleware::auth_middleware, router::RouterContext, stream::AxumRouterState,
-};
+use crate::config::Config;
 
+mod axum_router;
 mod config;
 mod db;
-mod middleware;
-mod router;
+mod rspc_router;
 mod scan;
-mod stream;
 
-#[cfg(not(debug_assertions))]
-#[derive(RustEmbed)]
-#[folder = "../client/dist/"]
-struct Assets;
+#[derive(Clone)]
+struct AxumRouterState {
+    pub config: Arc<RwLock<Config>>,
+    pub pool: DatabaseConnection,
+}
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -68,52 +55,17 @@ async fn main() -> Result<()> {
         };
     }
 
-    let router = router::mount();
-    let scan_status = Arc::new(RwLock::new(router::ScanStatus { is_scanning: false }));
-
-    let app = axum::Router::new()
-        .nest(
-            "/stream",
-            axum::Router::new()
-                .fallback(get(stream::stream))
-                .layer(from_fn_with_state(
-                    AxumRouterState {
-                        config: config.clone(),
-                        pool: db.clone(),
-                    },
-                    auth_middleware,
-                )),
-        )
+    let app = Router::new()
+        .merge(rspc_router::mount(config, db))
+        .merge(axum_router::mount(config, db))
         .with_state(AxumRouterState {
             config: config.clone(),
             pool: db.clone(),
-        })
-        .nest(
-            "/rspc",
-            router
-                .endpoint(move |req: Request| {
-                    let token = req.query_pairs().and_then(|pairs| {
-                        pairs
-                            .into_iter()
-                            .find(|(key, _)| key == "token")
-                            .map(|(_, value)| value.to_string())
-                    });
+        });
 
-                    RouterContext {
-                        config: config.clone(),
-                        pool: db,
-                        token,
-                        scan_status,
-                    }
-                })
-                .axum(),
-        );
-
-    #[cfg(not(debug_assertions))]
-    let app = app.fallback(static_handler);
-
-    let addr = "[::]:14567".parse::<std::net::SocketAddr>().unwrap(); // This listens on IPv6 and IPv4
+    let addr = "[::]:14567".parse::<std::net::SocketAddr>().unwrap();
     println!("listening on http://{}/rspc", addr);
+
     let axum_task = axum::Server::bind(&addr).serve(app.into_make_service());
 
     tokio::select! {
@@ -124,35 +76,4 @@ async fn main() -> Result<()> {
     }
 
     Ok(())
-}
-
-#[cfg(not(debug_assertions))]
-async fn static_handler(uri: Uri) -> Result<impl IntoResponse, StatusCode> {
-    let path = uri.path().trim_start_matches('/');
-
-    if let Some(content) = Assets::get(path) {
-        let body = boxed(Full::from(content.data));
-        let mime = mime_guess::from_path(path).first_or_octet_stream();
-
-        Ok(Response::builder()
-            .header(header::CONTENT_TYPE, mime.as_ref())
-            .body(body)
-            .unwrap())
-    } else {
-        index_html().await
-    }
-}
-
-#[cfg(not(debug_assertions))]
-async fn index_html() -> Result<Response, StatusCode> {
-    if let Some(content) = Assets::get("index.html") {
-        let body = boxed(Full::from(content.data));
-
-        Ok(Response::builder()
-            .header(header::CONTENT_TYPE, "text/html")
-            .body(body)
-            .unwrap())
-    } else {
-        Err(StatusCode::INTERNAL_SERVER_ERROR)
-    }
 }

@@ -124,7 +124,7 @@ impl MigrationTrait for Migration {
                     .col(ColumnDef::new(Product::RatingCount).integer().not_null())
                     .col(ColumnDef::new(Product::CommentCount).integer().not_null())
                     .col(ColumnDef::new(Product::Path).string().not_null())
-                    .col(ColumnDef::new(Product::Image).string().not_null())
+                    .col(ColumnDef::new(Product::Image).array(ColumnType::String(None)).not_null())
                     // nullable
                     .col(ColumnDef::new(Product::Description).string())
                     .col(ColumnDef::new(Product::Series).string())

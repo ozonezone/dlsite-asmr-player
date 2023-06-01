@@ -1,6 +1,5 @@
 use std::path::PathBuf;
 
-use chrono::Datelike;
 use dlsite::product::Product;
 use entity::entities::{circle, product, product_genre, product_user_genre};
 use migration::{Expr, PgFunc};
@@ -21,41 +20,29 @@ pub async fn create_product(
     .exec(pool)
     .await?;
 
-    upsert_product()
-        .params(
-            &client,
-            &UpsertProductParams {
-                id: product.id.clone(),
-                name: product.title,
-                description: None::<&str>,
-                series: product.series,
-                circle_id: product.circle.id,
-                remote_image: product
-                    .images
-                    .iter()
-                    .map(|i| i.to_string())
-                    .collect::<Vec<_>>(),
-                actor: product.people.voice_actor.unwrap_or_default(),
-                author: product.people.author.unwrap_or_default(),
-                illustrator: product.people.illustrator.unwrap_or_default(),
-                price: product.price,
-                sale_count: product.sale_count,
-                age: product.age_rating.into(),
-                // convert chrono date to "time" crate date
-                released_at: time::Date::from_calendar_date(
-                    product.released_at.year(),
-                    time::Month::try_from(u8::try_from(product.released_at.month()).unwrap())
-                        .unwrap(),
-                    product.released_at.day().try_into().unwrap(),
-                )
-                .unwrap(),
-                rating: product.rating,
-                rating_count: product.rate_count.unwrap_or(0),
-                comment_count: product.review_count.unwrap_or(0),
-                path: path.to_string_lossy(),
-            },
-        )
-        .await?;
+    product::Entity::insert(product::ActiveModel {
+        id: Set(product.id.clone()),
+        name: Set(product.title),
+        description: Set(None),
+        series: Set(product.series),
+        circle_id: Set(product.circle.id),
+        image: Set(product
+            .images
+            .iter()
+            .map(|i| i.to_string())
+            .collect::<Vec<_>>()),
+        actor: Set(product.people.voice_actor.unwrap_or_default()),
+        author: Set(product.people.author.unwrap_or_default()),
+        illustrator: Set(product.people.illustrator.unwrap_or_default()),
+        price: Set(product.price),
+        sale_count: Set(product.sale_count),
+        age: Set(product.age_rating.into()),
+        released_at: Set(product.released_at),
+        rating: Set(product.rating),
+        rating_count: Set(product.rate_count.unwrap_or(0)),
+        comment_count: Set(product.review_count.unwrap_or(0)),
+        path: Set(path.to_string_lossy().to_string()),
+    });
 
     for genre in product.genre {
         let transaction = client.transaction().await?;

@@ -1,4 +1,4 @@
-use std::{collections::VecDeque, path::PathBuf, sync::Arc};
+use std::{collections::VecDeque, path::PathBuf};
 
 use axum::{
     body::Body,
@@ -8,18 +8,11 @@ use axum::{
 };
 use entity::entities::product;
 use sanitize_filename::sanitize;
-use sea_orm::{DatabaseConnection, EntityTrait};
-use tokio::sync::RwLock;
+use sea_orm::EntityTrait;
 use tower::ServiceExt;
 use tower_http::services::ServeFile;
 
-use crate::config::Config;
-
-#[derive(Clone)]
-pub(crate) struct AxumRouterState {
-    pub config: Arc<RwLock<Config>>,
-    pub pool: DatabaseConnection,
-}
+use super::AxumRouterState;
 
 pub(super) async fn stream(
     State(state): State<AxumRouterState>,

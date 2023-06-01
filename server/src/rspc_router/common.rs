@@ -41,3 +41,10 @@ pub struct UserGenre {
     pub name: String,
     pub count: i32,
 }
+
+#[derive(Serialize, Type)]
+pub struct ProductResponse {
+    pub product: product::Model,
+    pub genre: Vec<Genre>,
+    pub user_genre: Vec<UserGenre>,
+}

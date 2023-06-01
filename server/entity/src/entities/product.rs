@@ -21,7 +21,7 @@ pub struct Model {
     pub rating_count: i32,
     pub comment_count: i32,
     pub path: String,
-    pub image: String,
+    pub image: Vec<String>,
     pub description: Option<String>,
     pub series: Option<String>,
     #[sea_orm(column_type = "Float", nullable)]

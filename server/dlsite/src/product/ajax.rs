@@ -14,7 +14,7 @@ pub struct ProductAjax {
     pub dl_count: i32,
     #[serde(deserialize_with = "serde_aux::prelude::deserialize_option_number_from_string")]
     pub review_count: Option<i32>,
-    pub rate_average_2dp: Option<f64>,
+    pub rate_average_2dp: Option<f32>,
     pub rate_count: Option<i32>,
     pub work_name: String,
     pub price: i32,

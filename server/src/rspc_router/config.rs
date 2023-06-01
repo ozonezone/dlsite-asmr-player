@@ -3,7 +3,7 @@ use sea_orm::{ColumnTrait, EntityTrait, QueryFilter};
 
 use crate::config::Config;
 
-use super::{utils::ToRspcError, RouterBuilder};
+use super::{utils::ToRspcInternalError, RouterBuilder};
 
 pub(crate) fn mount() -> RouterBuilder {
     <RouterBuilder>::new()
