@@ -17,6 +17,7 @@ static DLSITE_FOLDER_REGEX: Lazy<Regex> = Lazy::new(|| regex::Regex::new(r"(?i)R
 /// # Arguments
 /// * `folders` - List of folders to scan
 /// * `force` - Force fetch metadata for each RJ folder even if the metadata already exists in db.
+#[tracing::instrument(err)]
 pub async fn scan(
     folders: &Vec<PathBuf>,
     force: bool,

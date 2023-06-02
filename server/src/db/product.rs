@@ -8,6 +8,7 @@ use sea_orm::{
     TransactionTrait,
 };
 
+#[tracing::instrument(err)]
 pub async fn create_product(
     db: &DatabaseConnection,
     product: Product,

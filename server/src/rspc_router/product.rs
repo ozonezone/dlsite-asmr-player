@@ -103,8 +103,6 @@ pub(crate) fn mount() -> RouterBuilder {
                     .to_rspc_internal_error("Failed to get products")?;
                 let ids = products.iter().map(|p| p.0.id.clone()).collect::<Vec<_>>();
 
-                dbg!(&ids);
-
                 let mut genres_map = HashMap::new();
                 product_genre::Entity::find()
                     .find_also_related(genre::Entity)

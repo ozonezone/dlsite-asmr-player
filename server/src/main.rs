@@ -40,7 +40,7 @@ async fn main() -> Result<()> {
     let config = Arc::new(RwLock::new(config));
 
     let mut opt = ConnectOptions::new(std::env::var("DATABASE_URL").unwrap());
-    opt.sqlx_logging_level(tracing::log::LevelFilter::Error);
+    opt.sqlx_logging_level(tracing::log::LevelFilter::Debug);
     let db = Database::connect(opt).await?;
 
     info!("Running database migrations");
