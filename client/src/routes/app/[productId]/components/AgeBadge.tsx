@@ -2,7 +2,7 @@ import { Age } from "@/bindings/bindings";
 import { Badge } from "@mantine/core";
 
 export function AgeBadge(props: { age: Age }) {
-  if (props.age === "AllAges") {
+  if (props.age === "All") {
     return (
       <Badge variant="filled" color="blue">
         全年齢
