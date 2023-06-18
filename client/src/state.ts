@@ -6,7 +6,7 @@ import { createReactQueryHooks } from "@rspc/react";
 import { createClient, WebsocketTransport } from "@rspc/client";
 import type { Procedures } from "@/bindings/bindings";
 import { atom } from "jotai";
-import { SERVER_HOST } from "./const";
+import { SERVER_HOST, WS_PROTOCOL } from "./const";
 
 export const authAtom = atomWithStorage<null | string>(
   "auth",
@@ -22,7 +22,9 @@ export const clientAtom = selectAtom(
   (auth) => {
     const client = createClient<Procedures>({
       transport: new WebsocketTransport(
-        `ws://${SERVER_HOST}/rspc/ws${auth ? "?token=" + auth : ""}`,
+        `${WS_PROTOCOL}://${SERVER_HOST}/rspc/ws${
+          auth ? "?token=" + auth : ""
+        }`,
       ),
     });
     return client;
