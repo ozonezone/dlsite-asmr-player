@@ -64,11 +64,11 @@ impl DlsiteClient {
     ///
     /// # Example
     /// ```
-    /// use dlsite::{DlsiteClient, Product};
+    /// use dlsite::{DlsiteClient, product::Product};
     /// use tokio;
     /// #[tokio::main]
     /// async fn main() {
-    ///     let client = DlsiteClient::new().unwrap();
+    ///     let client = DlsiteClient::default();
     ///     let product = client.get_product("RJ123456").await.unwrap();
     ///     println!("{:#?}", product);
     /// }
