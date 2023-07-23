@@ -14,7 +14,14 @@ export const authAtom = atomWithStorage<null | string>(
 );
 export const signedInAtom = atom(false);
 
-export const queryClient = new QueryClient();
+export const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 60 * 5,
+      cacheTime: Infinity,
+    },
+  },
+});
 export const rspc = createReactQueryHooks<Procedures>();
 
 export const clientAtom = selectAtom(
