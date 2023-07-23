@@ -9,6 +9,13 @@ export default defineConfig({
     tsconfigPaths(),
     VitePWA({
       registerType: "autoUpdate",
+      srcDir: "src",
+      filename: "service-worker.js",
+      strategies: "injectManifest",
+      injectRegister: false,
+      injectManifest: {
+        injectionPoint: null,
+      },
       manifest: {
         icons: [
           {

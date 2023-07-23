@@ -38,3 +38,7 @@ script = "rm -rf ./assets && cp -r ../client/dist ./assets"
 [tasks.docker-build]
 script = "docker build -t dap:latest ."
 dependencies = ["build-frontend", "copy-asset"]
+
+[tasks.run-release]
+script = "cargo run --release"
+dependencies = ["build-frontend", "copy-asset"]
