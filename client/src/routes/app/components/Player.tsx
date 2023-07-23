@@ -1,13 +1,13 @@
 import AudioPlayer from "react-h5-audio-player";
 import "react-h5-audio-player/lib/styles.css";
-import { useAtomValue, useSetAtom } from "jotai";
-import { authAtom } from "@/state";
-import { SERVER_HOST } from "@/const";
+import { useSetAtom } from "jotai";
 import { ActionIcon } from "@mantine/core";
 import { XMarkIcon } from "@heroicons/react/24/solid";
 
 import { PlayerData, playerDataAtom } from "../state";
 import { useStreamUrl } from "../utils";
+import { useRef } from "react";
+import H5AudioPlayer from "react-h5-audio-player";
 
 export function Player(props: { playerData: NonNullable<PlayerData> }) {
   const setPlayerData = useSetAtom(playerDataAtom);
@@ -15,22 +15,32 @@ export function Player(props: { playerData: NonNullable<PlayerData> }) {
   const currentFile = props.playerData.queue[props.playerData.queueIdx];
   const fileName = currentFile.path[currentFile.path.length - 1];
   const fileParents = currentFile.path.slice(0, -1);
+  const player = useRef<H5AudioPlayer>(null);
+
+  const goNext = () => {
+    if (props.playerData.queueIdx + 1 < props.playerData.queue.length) {
+      setPlayerData({
+        ...props.playerData,
+        queueIdx: props.playerData.queueIdx + 1,
+      });
+    }
+  };
+
   return (
     <AudioPlayer
       autoPlay
+      ref={player}
       showSkipControls={true}
       header={
         <div className="flex flex-row justify-between">
           <div>
             <span className="text-gray-400">
-              {props.playerData.productId}/
+              {currentFile.productId}/
             </span>
             {fileParents.map((path, idx) => (
-              <>
-                <span className="text-gray-400" key={idx}>
-                  {path}/
-                </span>
-              </>
+              <span className="text-gray-400" key={idx}>
+                {path}/
+              </span>
             ))}
             <span>{fileName}</span>
           </div>
@@ -39,21 +49,26 @@ export function Player(props: { playerData: NonNullable<PlayerData> }) {
           </ActionIcon>
         </div>
       }
-      src={getStreamUrl(props.playerData.productId, currentFile.path)}
+      src={getStreamUrl(currentFile.productId, currentFile.path)}
       onClickNext={() => {
-        if (props.playerData.queueIdx + 1 < props.playerData.queue.length) {
-          setPlayerData({
-            ...props.playerData,
-            queueIdx: props.playerData.queueIdx + 1,
-          });
-        }
+        goNext();
+      }}
+      onEnded={() => {
+        goNext();
       }}
       onClickPrevious={() => {
-        if (props.playerData.queueIdx - 1 >= 0) {
-          setPlayerData({
-            ...props.playerData,
-            queueIdx: props.playerData.queueIdx - 1,
-          });
+        const audio = player?.current?.audio.current;
+        if (audio?.currentTime && audio.currentTime < 2) {
+          if (props.playerData.queueIdx - 1 >= 0) {
+            setPlayerData({
+              ...props.playerData,
+              queueIdx: props.playerData.queueIdx - 1,
+            });
+          }
+        } else {
+          if (audio?.currentTime) {
+            audio.currentTime = 0;
+          }
         }
       }}
     />

@@ -2,9 +2,11 @@ env_files = [".env"]
 
 [config]
 default_to_workspace = false
+unstable_features = ["CTRL_C_HANDLING"]
 
 [tasks.dev-backend]
-script = "cargo watch -- cargo run"
+script = "cargo run"
+watch = true
 
 [tasks.dev-frontend]
 script = "cd ../client && pnpm dev"

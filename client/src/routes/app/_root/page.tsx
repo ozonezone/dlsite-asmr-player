@@ -55,26 +55,40 @@ export default function Page() {
             setSortType(e.currentTarget.value as "Date" | "Name");
           }}
         />
-        {data ? <div>{data[1]} items</div> : null}
       </div>
       {totalPage
         ? (
-          <Pagination
-            total={totalPage}
-            value={page}
-            onChange={(e) => setPage(e)}
-          />
+          <div className="flex flex-row gap-3">
+            <Pagination
+              total={totalPage}
+              value={page}
+              onChange={(e) => setPage(e)}
+            />
+            {data ? <div>{data[1]} items</div> : null}
+          </div>
         )
         : null}
       {data
         ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
             {data[0].map((data) => {
               return <ItemCard product={data} key={data.product.id} />;
             })}
           </div>
         )
         : <Skeleton />}
+      {totalPage && data
+        ? (
+          <div className="flex flex-row gap-3">
+            <Pagination
+              total={totalPage}
+              value={page}
+              onChange={(e) => setPage(e)}
+            />
+            {data ? <div>{data[1]} items</div> : null}
+          </div>
+        )
+        : null}
     </div>
   );
 }
@@ -83,22 +97,20 @@ function ItemCard(
   { product: { product, circle_name } }: { product: ProductResponse },
 ) {
   return (
-    <Link to={`/app/product/${product.id}`}>
-      <Card shadow="sm" padding="lg" radius="md" withBorder>
-        <Card.Section>
-          <Image
-            src={product.image[0]}
-            height={160}
-          />
-        </Card.Section>
+    <div className="flex flex-col drop-shadow-md bg-white">
+      <Link to={`/app/product/${product.id}`}>
+        <Image
+          src={product.image[0]}
+          className="pb-1"
+        />
+        <Text weight={500}>{product.name}</Text>
+      </Link>
 
-        <Group position="apart" mt="md" mb="xs">
-          <Text weight={500}>{product.name}</Text>
-          <AgeBadge age={product.age} />
-          <Text size="sm">{product.released_at}</Text>
-          <Text size="sm">{circle_name}</Text>
-        </Group>
-      </Card>
-    </Link>
+      <div className="flex flex-wrap text-sm gap-2">
+        <AgeBadge age={product.age} />
+        <div>{product.released_at}</div>
+        <div>{circle_name}</div>
+      </div>
+    </div>
   );
 }
