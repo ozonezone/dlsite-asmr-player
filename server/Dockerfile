@@ -14,7 +14,7 @@ RUN cargo chef cook --release --recipe-path recipe.json
 COPY . .
 RUN cargo build --release
 
-FROM debian:bullseye-slim AS runtime
+FROM debian:bookworm-slim AS runtime
 WORKDIR /app
 COPY --from=builder /app/app/target/release/server /usr/local/bin
 ENTRYPOINT ["/usr/local/bin/server"]
