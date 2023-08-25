@@ -1,5 +1,5 @@
 import { rspc } from "@/state";
-import { PhotoIcon, PlayIcon } from "@heroicons/react/24/solid";
+import { DocumentIcon, PhotoIcon, PlayIcon } from "@heroicons/react/24/solid";
 import { useSetAtom } from "jotai";
 import { useParams } from "react-router-dom";
 import { playerDataAtom } from "../state";
@@ -254,6 +254,22 @@ function ProductInner(props: { productId: string }) {
                   {otherFiles.map((file, idx) => (
                     <List.Item
                       key={idx}
+                      icon={
+                        <ActionIcon
+                          color="blue"
+                          size={24}
+                          radius="xl"
+                          onClick={() => {
+                            setImageIdx(idx);
+                            window.open(
+                              getStreamUrl(props.productId, file),
+                              "_blank",
+                            );
+                          }}
+                        >
+                          <DocumentIcon className="w-4 h-4" />
+                        </ActionIcon>
+                      }
                     >
                       {file.map((path) => path).join("/")}
                     </List.Item>
