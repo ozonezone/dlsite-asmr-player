@@ -1,69 +1,109 @@
-import React from "react";
-import { useAtom } from "jotai";
-import { playerDataAtom } from "./state";
-import { Player } from "./components/Player";
-
-import { useState } from "react";
+import { ProductResponse, SortOrder, SortType } from "@/bindings/bindings";
+import { rspc } from "@/state";
+import { Image, NativeSelect, Pagination, Text } from "@mantine/core";
+import { Link } from "react-router-dom";
+import { AgeBadge } from "./[productId]/_components/AgeBadge";
+import { Skeleton } from "@/components/Skeleton";
 import {
-  AppShell,
-  Aside,
-  Footer,
-  Header,
-  MediaQuery,
-  Navbar,
-  Text,
-  useMantineTheme,
-} from "@mantine/core";
+  createEnumParam,
+  NumberParam,
+  useQueryParam,
+  withDefault,
+} from "use-query-params";
 
-import { Header as CustomHeader } from "./components/Header";
-import { Navbar as CustomNavbar } from "./components/Navbar";
-
-import { Outlet } from "react-router-dom";
+const PageParam = withDefault(NumberParam, 1);
+const SortOrderParam = withDefault(createEnumParam(["Desc", "Asc"]), "Desc");
+const SortTypeParam = withDefault(createEnumParam(["Date", "Name"]), "Date");
 
 export default function Page() {
-  const theme = useMantineTheme();
-  const [opened, setOpened] = useState(false);
+  const [page, setPage] = useQueryParam("page", PageParam);
+  const [sortOrder, setSortOrder] = useQueryParam("order", SortOrderParam);
+  const [sortType, setSortType] = useQueryParam("sortType", SortTypeParam);
+  const limit = 50;
 
-  const [playerData] = useAtom(playerDataAtom);
+  const { data } = rspc.useQuery(["product.browse", {
+    limit,
+    page: page,
+    sort_type: sortType as SortType,
+    sort_order: sortOrder as SortOrder,
+  }]);
+  const totalPage = data ? (data[1] / limit + 1) : null;
 
   return (
-    <AppShell
-      styles={{
-        main: {
-          background: theme.colorScheme === "dark"
-            ? theme.colors.dark[8]
-            : theme.colors.gray[0],
-        },
-      }}
-      navbarOffsetBreakpoint="sm"
-      asideOffsetBreakpoint="sm"
-      navbar={
-        <Navbar
-          width={{ sm: opened ? 200 : 0 }}
-          className={`${
-            opened ? "" : "md:translate-x-[-200px] -translate-x-full"
-          } transition-all duration-100`}
-        >
-          <CustomNavbar />
-        </Navbar>
-      }
-      footer={
-        <Footer height={playerData ? 120 : 0}>
-          <div className="fixed bottom-0 w-full z-50">
-            {playerData ? <Player playerData={playerData} /> : <></>}
+    <div className="flex flex-col justify-center items-center gap-2">
+      <div className="flex flex-row gap-3 justify-center items-center">
+        <NativeSelect
+          data={["Desc", "Asc"]}
+          label="Sort order"
+          value={sortOrder}
+          onChange={(e) => {
+            setSortOrder(e.currentTarget.value as "Desc" | "Asc");
+          }}
+        />
+        <NativeSelect
+          data={["Date", "Name"]}
+          label="Sort type"
+          value={sortType}
+          onChange={(e) => {
+            setSortType(e.currentTarget.value as "Date" | "Name");
+          }}
+        />
+      </div>
+      {totalPage
+        ? (
+          <div className="flex flex-row gap-3">
+            <Pagination
+              total={totalPage}
+              value={page}
+              onChange={(e) => setPage(e)}
+            />
+            {data ? <div>{data[1]} items</div> : null}
           </div>
-        </Footer>
-      }
-      header={
-        <Header
-          height={{ base: 50 }}
-          p="md"
-        >
-          <CustomHeader opened={opened} setOpened={setOpened} />
-        </Header>
-      }
-    >
-      <Outlet />
-    </AppShell>
+        )
+        : null}
+      {data
+        ? (
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
+            {data[0].map((data) => {
+              return <ItemCard product={data} key={data.product.id} />;
+            })}
+          </div>
+        )
+        : <Skeleton />}
+      {totalPage && data
+        ? (
+          <div className="flex flex-row gap-3">
+            <Pagination
+              total={totalPage}
+              value={page}
+              onChange={(e) => setPage(e)}
+            />
+            {data ? <div>{data[1]} items</div> : null}
+          </div>
+        )
+        : null}
+    </div>
+  );
+}
+
+function ItemCard(
+  { product: { product, circle_name } }: { product: ProductResponse },
+) {
+  return (
+    <div className="flex flex-col drop-shadow-md bg-white">
+      <Link to={`/app/product/${product.id}`}>
+        <Image
+          src={product.image[0]}
+          className="pb-1"
+        />
+        <Text weight={500}>{product.name}</Text>
+      </Link>
+
+      <div className="flex flex-wrap text-sm gap-2">
+        <AgeBadge age={product.age} />
+        <div>{product.released_at}</div>
+        <div>{circle_name}</div>
+      </div>
+    </div>
   );
 }

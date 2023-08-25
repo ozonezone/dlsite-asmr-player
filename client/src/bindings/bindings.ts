@@ -11,7 +11,7 @@ export type Procedures = {
         { key: "product.get", input: string, result: ProductResponse },
     mutations: 
         { key: "config.setConfig", input: Config, result: string } | 
-        { key: "config.setPassword", input: string, result: null } | 
+        { key: "config.setPassword", input: NewPasswordArgs, result: null } | 
         { key: "scan.start", input: boolean, result: null },
     subscriptions: never
 };
@@ -25,6 +25,8 @@ export type SortType = "Name" | "Date"
 export type Genre = { id: string; name: string }
 
 export type BrowseParams = { sort_type: SortType; sort_order: SortOrder; page: number; limit: number }
+
+export type NewPasswordArgs = { password: string; new_password: string }
 
 export type Age = "Adult" | "All" | "R"
 

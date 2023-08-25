@@ -22,3 +22,11 @@ impl<T> ToRspcNotFound<T> for Option<T> {
         self.ok_or_else(|| rspc::Error::new(rspc::ErrorCode::NotFound, msg.to_string()))
     }
 }
+impl<T> ToRspcInternalError<T> for Option<T> {
+fn to_rspc_internal_error(self, msg: &str) -> Result<T, rspc::Error> {
+    self.ok_or_else(|| {
+        rspc::Error::new(rspc::ErrorCode::InternalServerError, msg.to_string())
+    })
+}
+
+}

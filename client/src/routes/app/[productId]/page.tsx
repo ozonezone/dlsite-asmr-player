@@ -11,11 +11,12 @@ import {
   Divider,
   List,
   Table,
+  Tabs,
   Title,
 } from "@mantine/core";
 import ImageGallery from "react-image-gallery";
 import "react-image-gallery/styles/css/image-gallery.css";
-import { AgeBadge } from "./components/AgeBadge";
+import { AgeBadge } from "./_components/AgeBadge";
 import { Skeleton } from "@/components/Skeleton";
 import { useEffect, useState } from "react";
 import { useStreamUrl } from "../utils";
@@ -81,15 +82,36 @@ function ProductInner(props: { productId: string }) {
       <div className="flex flex-col gap-3">
         <Title order={2}>{product.product.name}</Title>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">
-          <ImageGallery
-            showPlayButton={false}
-            items={product.product.image.map((url) => {
-              return {
-                original: url,
-                thumbnail: url,
-              };
-            })}
-          />
+          <Tabs defaultValue="local">
+            <Tabs.List className="pb-2">
+              <Tabs.Tab value="remote">DLSite</Tabs.Tab>
+              <Tabs.Tab value="local">Local</Tabs.Tab>
+            </Tabs.List>
+
+            <Tabs.Panel value="remote">
+              <ImageGallery
+                showPlayButton={false}
+                items={product.product.image.map((url) => {
+                  return {
+                    original: url,
+                    thumbnail: url,
+                  };
+                })}
+              />
+            </Tabs.Panel>
+            <Tabs.Panel value="local">
+              <ImageGallery
+                showPlayButton={false}
+                items={imageFiles.map((path) => {
+                  const url = getStreamUrl(props.productId, path);
+                  return {
+                    original: url,
+                    thumbnail: url,
+                  };
+                })}
+              />
+            </Tabs.Panel>
+          </Tabs>
           <div>
             <Table>
               <tbody>

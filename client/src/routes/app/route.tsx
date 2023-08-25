@@ -1,10 +1,10 @@
 import { RouteObject } from "react-router-dom";
 import { default as AppPage } from "./page";
-import { default as AppRootPage } from "./_root/page";
+import { default as AppLayout } from "./layout";
 import { default as ProductPage } from "./[productId]/page";
 import { default as SettingsPage } from "./settings/page";
 import { default as ScanPage } from "./scan/page";
-import Protected from "./components/Protected";
+import Protected from "./_components/Protected";
 import { QueryParamProvider } from "use-query-params";
 import { ReactRouter6Adapter } from "use-query-params/adapters/react-router-6";
 
@@ -15,14 +15,14 @@ export const router: RouteObject = {
       <QueryParamProvider
         adapter={ReactRouter6Adapter}
       >
-        <AppPage />
+        <AppLayout />
       </QueryParamProvider>
     </Protected>
   ),
   children: [
     {
       path: "/app",
-      element: <AppRootPage />,
+      element: <AppPage />,
     },
     {
       path: "/app/settings",

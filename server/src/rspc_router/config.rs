@@ -1,24 +1,41 @@
 use entity::entities::user;
-use sea_orm::{ColumnTrait, EntityTrait, QueryFilter};
+use rspc::Type;
+use sea_orm::{ActiveModelTrait, ColumnTrait, EntityTrait, QueryFilter, Set};
+use serde::Deserialize;
 
 use crate::config::Config;
 
 use super::{utils::ToRspcInternalError, RouterBuilder};
 
+#[derive(Deserialize, Type)]
+struct NewPasswordArgs {
+    password: String,
+    new_password: String,
+}
+
 pub(crate) fn mount() -> RouterBuilder {
     <RouterBuilder>::new()
         .mutation("setPassword", |t| {
-            t(|ctx, new_password: String| async move {
-                user::Entity::update(user::ActiveModel {
-                    password: sea_orm::ActiveValue::Set(new_password.clone()),
-                    ..Default::default()
-                })
-                .filter(user::Column::Id.eq(1))
-                .exec(&ctx.db)
-                .await
-                .to_rspc_internal_error("Could not update password")?;
+            t(|ctx, args: NewPasswordArgs| async move {
+                let user = user::Entity::find_by_id(1)
+                    .one(&ctx.db)
+                    .await
+                    .to_rspc_internal_error("Db connect error")?
+                    .to_rspc_internal_error("User not found")?;
+                if args.password == user.password {
+                    let mut user: user::ActiveModel = user.into();
+                    user.password = Set(args.new_password.clone());
+                    user.update(&ctx.db)
+                        .await
+                        .to_rspc_internal_error("Could not update password")?;
 
-                Ok(())
+                    Ok(())
+                } else {
+                    Err(rspc::Error::new(
+                        rspc::ErrorCode::Unauthorized,
+                        "Wrong password".into(),
+                    ))
+                }
             })
         })
         .mutation("setConfig", |t| {

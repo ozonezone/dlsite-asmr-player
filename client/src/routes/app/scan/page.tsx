@@ -1,4 +1,4 @@
-import { rspc } from "@/state";
+import { queryClient, rspc } from "@/state";
 import { Button, Loader } from "@mantine/core";
 import { notifications } from "@mantine/notifications";
 import { useEffect } from "react";
@@ -15,6 +15,7 @@ export default function Page() {
         color: "red",
         message: "Scan failed: " + error.message,
       });
+      queryClient.clear();
     }
   }, [error]);
 
