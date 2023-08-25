@@ -1,25 +1,25 @@
-import { rspc, signedInAtom } from "@/state";
+import { rspc, tokenAtom } from "@/state";
 import { Loader } from "@mantine/core";
-import { useSetAtom } from "jotai";
+import { useAtom } from "jotai";
 import { useEffect } from "react";
-import { Navigate, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 type ProtectedProps = {
   children: JSX.Element;
 };
 function Protected(props: ProtectedProps) {
   const { data, isLoading, error } = rspc.useQuery(["ping_auth"]);
-  const setSignedIn = useSetAtom(signedInAtom);
+  const [token] = useAtom(tokenAtom);
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (error) {
-      localStorage.removeItem("auth");
+    if (!token) {
       navigate("/login", { replace: true });
     }
-    if (data && !error) {
-      setSignedIn(true);
+    if (!isLoading && error) {
+      localStorage.removeItem("token");
+      navigate("/login", { replace: true });
     }
-  }, [data, error]);
+  }, [token, error]);
 
   if (isLoading) {
     return (
@@ -28,8 +28,10 @@ function Protected(props: ProtectedProps) {
         <p>Loading app...</p>
       </div>
     );
-  } else {
+  } else if (data && !error) {
     return props.children;
+  } else {
+    return <div>Redirecting...</div>;
   }
 }
 export default Protected;

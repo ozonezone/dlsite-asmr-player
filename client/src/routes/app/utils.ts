@@ -1,9 +1,9 @@
 import { SERVER_HOST, SERVER_PROTOCOL } from "@/const";
-import { authAtom } from "@/state";
+import { tokenAtom } from "@/state";
 import { useAtomValue } from "jotai";
 
 export function useStreamUrl() {
-  const token = useAtomValue(authAtom)!;
+  const token = useAtomValue(tokenAtom)!;
 
   return (productId: string, path: string[]) => {
     return `${SERVER_PROTOCOL}//${SERVER_HOST}/stream/${productId}/${

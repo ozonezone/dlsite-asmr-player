@@ -1,21 +1,20 @@
-import { authAtom } from "@/state";
+import { tokenAtom } from "@/state";
 import { Button, Card, Input, Title } from "@mantine/core";
-import { useSetAtom } from "jotai";
+import { useAtom } from "jotai";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 export function Login() {
-  const auth = localStorage.getItem("auth");
-  const setAuth = useSetAtom(authAtom);
+  const [token, setToken] = useAtom(tokenAtom);
   const navigate = useNavigate();
 
   const [password, setPassword] = useState("");
 
   useEffect(() => {
-    if (auth) {
+    if (token) {
       navigate("/app", { replace: true });
     }
-  }, [auth]);
+  }, [token]);
 
   return (
     <div className="w-full flex flex-col items-center px-3">
@@ -26,7 +25,10 @@ export function Login() {
         withBorder
         className="w-full md:w-[40rem] mt-4"
       >
-        <form className="flex flex-col items-center" onSubmit={() => false}>
+        <form
+          className="flex flex-col items-center"
+          onSubmit={(e) => e.preventDefault()}
+        >
           <Title className="py-5">Login</Title>
           <div className="mb-6 w-full">
             <label
@@ -48,8 +50,7 @@ export function Login() {
             type="submit"
             fullWidth
             onClick={() => {
-              setAuth(password);
-              navigate("/");
+              setToken(password);
             }}
             className=""
           >

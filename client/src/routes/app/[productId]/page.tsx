@@ -121,6 +121,8 @@ function ProductInner(props: { productId: string }) {
                     <a
                       className="font-medium text-blue-600 dark:text-blue-500 hover:underline"
                       href={`https://www.dlsite.com/maniax/work/=/product_id/${product.product.id}.html`}
+                      target="_blank"
+                      referrerPolicy="no-referrer"
                     >
                       {product.product.id}
                     </a>
