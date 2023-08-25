@@ -36,6 +36,7 @@ where
 
 impl DlsiteClient {
     /// Get the AJAX data of multiple products.
+    #[tracing::instrument(err)]
     pub async fn get_products_ajax(
         &self,
         product_ids: Vec<&str>,

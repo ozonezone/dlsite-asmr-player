@@ -36,7 +36,7 @@ pub struct Review {
     pub good_review: String,
     pub bad_review: String,
     pub circle_id: String,
-    pub nick_name: String,
+    pub nick_name: Option<String>,
     pub popularity: Option<String>,
     pub rate: Option<String>,
     pub circle_name: String,
@@ -113,6 +113,7 @@ impl DlsiteClient {
     ///
     /// # Returns
     /// * `ProductReview` - Product reviews and related informations.
+    #[tracing::instrument(err, skip_all)]
     pub async fn get_product_review(
         &self,
         product_id: &str,
@@ -145,6 +146,8 @@ impl DlsiteClient {
                 message
             )));
         }
+
+        dbg!(&json);
 
         let json: ProductReview = serde_json::from_value(json)?;
         Ok(json)
