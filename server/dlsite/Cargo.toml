@@ -5,8 +5,6 @@ edition = "2021"
 description = "DLsite client"
 license = "MIT"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [dependencies]
 chrono = "0.4.24"
 reqwest = { version = "0.11.17", features = [
@@ -21,6 +19,7 @@ url = "2.3.1"
 tokio = { version = "1", features = ["macros"] }
 regex = "1.8.3"
 tracing = "0.1"
+strum = { version = "0.25", features = ["derive"] }
 
 [dev-dependencies]
 tokio = { version = "1", features = ["full"] }
