@@ -56,6 +56,8 @@ pub enum WorkType {
     ET3,
     /// ボイスコミック
     VCM,
+
+    Unknown,
 }
 
 /// Age category
