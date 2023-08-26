@@ -5,8 +5,7 @@ use scraper::{ElementRef, Html, Selector};
 use url::Url;
 
 use crate::{
-    circle::Circle, genre::Genre, interface::AgeCategory, utils::ToParseError, DlsiteClient,
-    DlsiteError, Result,
+    genre::Genre, interface::AgeCategory, utils::ToParseError, DlsiteClient, DlsiteError, Result,
 };
 
 use super::ProductPeople;
@@ -16,7 +15,8 @@ use super::ProductPeople;
 pub struct ProductHtml {
     pub released_at: NaiveDate,
     pub age_rating: AgeCategory,
-    pub circle: Circle,
+    pub circle_id: String,
+    pub circle_name: String,
     pub images: Vec<Url>,
     pub people: ProductPeople,
     pub genre: Vec<Genre>,
@@ -56,24 +56,22 @@ fn parse_product_html(html: &Html) -> Result<ProductHtml> {
         .select(&Selector::parse("#work_maker .maker_name a").unwrap())
         .next()
         .to_parse_error("No circle found")?;
-    let circle = Circle {
-        name: circle
-            .text()
-            .next()
-            .to_parse_error("No circle name found")?
-            .to_string(),
-        id: circle
-            .value()
-            .attr("href")
-            .to_parse_error("No circle id found")?
-            .split('/')
-            .last()
-            .to_parse_error("Failed to parse circle id")?
-            .split('.')
-            .next()
-            .to_parse_error("Failed to parse circle id")?
-            .to_string(),
-    };
+    let circle_name = circle
+        .text()
+        .next()
+        .to_parse_error("No circle name found")?
+        .to_string();
+    let circle_id = circle
+        .value()
+        .attr("href")
+        .to_parse_error("No circle id found")?
+        .split('/')
+        .last()
+        .to_parse_error("Failed to parse circle id")?
+        .split('.')
+        .next()
+        .to_parse_error("Failed to parse circle id")?
+        .to_string();
 
     let images: Vec<Url> = html
         .select(&Selector::parse(".product-slider-data > div").unwrap())
@@ -159,7 +157,8 @@ fn parse_product_html(html: &Html) -> Result<ProductHtml> {
     Ok(ProductHtml {
         released_at,
         age_rating,
-        circle,
+        circle_id,
+        circle_name,
         images,
         people: parse_product_people(html)?,
         genre,

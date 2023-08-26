@@ -1,9 +1,8 @@
 use anyhow::Context;
 use chrono::NaiveDate;
-use tracing::{error, info};
+use tracing::error;
 
 use crate::{
-    circle::Circle,
     genre::Genre,
     interface::{AgeCategory, WorkType},
     DlsiteClient,
@@ -19,13 +18,8 @@ async fn get_product_1_content() {
         res.title,
         "【ブルーアーカイブ】ユウカASMR～頑張るあなたのすぐそばに～".to_string()
     );
-    assert_eq!(
-        res.circle,
-        Circle {
-            name: "Yostar".to_string(),
-            id: "RG62982".to_string()
-        }
-    );
+    assert_eq!(res.circle_name, "Yostar");
+    assert_eq!(res.circle_id, "RG62982");
     assert_eq!(res.work_type, WorkType::SOU);
     assert_eq!(
         res.released_at,
@@ -56,12 +50,16 @@ async fn get_product_2() {
         "【イヤーキャンドル】道草屋-なつな3-たぬさんこんにちは【ずぶ濡れシャンプー】".to_string()
     );
     assert_eq!(
-        res.circle,
-        Circle {
-            name: "桃色CODE".to_string(),
-            id: "RG24350".to_string()
-        }
+        res.circle_name,
+
+        "桃色CODE"
     );
+    assert_eq!(
+        res.circle_id,
+
+        "RG24350"
+    );
+
     assert_eq!(res.work_type, WorkType::SOU);
     assert_eq!(
         res.released_at,
@@ -85,7 +83,7 @@ async fn get_product_2() {
 #[tokio::test]
 async fn get_product_otome() {
     let client = DlsiteClient::default();
-    let res = client.get_product("RJ01084246").await.unwrap();
+    client.get_product("RJ01084246").await.unwrap();
 }
 
 #[tokio::test]

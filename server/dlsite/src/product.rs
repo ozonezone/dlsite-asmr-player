@@ -1,4 +1,8 @@
-use crate::{circle::Circle, genre::Genre, interface::{WorkType, AgeCategory}, DlsiteClient, Result};
+use crate::{
+    genre::Genre,
+    interface::{AgeCategory, WorkType},
+    DlsiteClient, Result,
+};
 use chrono::NaiveDate;
 use url::Url;
 
@@ -17,7 +21,8 @@ pub struct Product {
     pub released_at: NaiveDate,
     pub age_rating: AgeCategory,
     pub genre: Vec<Genre>,
-    pub circle: Circle,
+    pub circle_id: String,
+    pub circle_name: String,
     pub price: i32,
     pub series: Option<String>,
     pub sale_count: Option<i32>,
@@ -73,7 +78,8 @@ impl DlsiteClient {
             age_rating: html_data.age_rating,
             genre: html_data.genre,
             series: html_data.series,
-            circle: html_data.circle,
+            circle_name: html_data.circle_name,
+            circle_id: html_data.circle_id,
             price: ajax_data.price,
             rating: ajax_data.rate_average_2dp,
             rate_count: ajax_data.rate_count,

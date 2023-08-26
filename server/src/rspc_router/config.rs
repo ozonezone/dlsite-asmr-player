@@ -1,6 +1,6 @@
 use entity::entities::user;
 use rspc::Type;
-use sea_orm::{ActiveModelTrait, ColumnTrait, EntityTrait, QueryFilter, Set};
+use sea_orm::{ActiveModelTrait, EntityTrait, Set};
 use serde::Deserialize;
 
 use crate::config::Config;
