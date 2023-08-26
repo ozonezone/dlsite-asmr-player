@@ -15,8 +15,8 @@ pub async fn create_product(
     path: PathBuf,
 ) -> Result<(), anyhow::Error> {
     circle::Entity::insert(circle::ActiveModel {
-        id: Set(product.circle.id.clone()),
-        name: Set(product.circle.name),
+        id: Set(product.circle_id.clone()),
+        name: Set(product.circle_name),
     })
     .on_conflict(
         OnConflict::column(circle::Column::Id)
@@ -31,7 +31,7 @@ pub async fn create_product(
         name: Set(product.title),
         description: Set(None),
         series: Set(product.series),
-        circle_id: Set(product.circle.id),
+        circle_id: Set(product.circle_id),
         image: Set(product
             .images
             .iter()
@@ -41,11 +41,15 @@ pub async fn create_product(
         author: Set(product.people.author.unwrap_or_default()),
         illustrator: Set(product.people.illustrator.unwrap_or_default()),
         price: Set(product.price),
-        sale_count: Set(product.sale_count),
+        sale_count: Set(product.sale_count.unwrap_or(0)),
         age: Set(match product.age_rating {
-            dlsite::product::AgeRating::AllAges => entity::entities::sea_orm_active_enums::Age::All,
-            dlsite::product::AgeRating::R => entity::entities::sea_orm_active_enums::Age::R,
-            dlsite::product::AgeRating::Adult => entity::entities::sea_orm_active_enums::Age::Adult,
+            dlsite::interface::AgeCategory::General => {
+                entity::entities::sea_orm_active_enums::Age::All
+            }
+            dlsite::interface::AgeCategory::R15 => entity::entities::sea_orm_active_enums::Age::R,
+            dlsite::interface::AgeCategory::Adult => {
+                entity::entities::sea_orm_active_enums::Age::Adult
+            }
         }),
         released_at: Set(product.released_at),
         rating: Set(product.rating),
