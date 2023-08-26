@@ -24,3 +24,4 @@ strum = { version = "0.25", features = ["derive"] }
 [dev-dependencies]
 tokio = { version = "1", features = ["full"] }
 anyhow = { version = "1", features = ["backtrace", "std"] }
+tracing-subscriber = "0.3"

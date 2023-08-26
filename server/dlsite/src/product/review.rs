@@ -35,11 +35,11 @@ pub struct Review {
     pub regist_date: String,
     pub good_review: String,
     pub bad_review: String,
-    pub circle_id: String,
+    pub circle_id: Option<String>,
     pub nick_name: Option<String>,
     pub popularity: Option<String>,
     pub rate: Option<String>,
-    pub circle_name: String,
+    pub circle_name: Option<String>,
     pub top_sort_key: Option<String>,
     pub reviewer_status: String,
     pub is_purchased: String,
@@ -146,8 +146,6 @@ impl DlsiteClient {
                 message
             )));
         }
-
-        dbg!(&json);
 
         let json: ProductReview = serde_json::from_value(json)?;
         Ok(json)

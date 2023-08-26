@@ -1,10 +1,11 @@
 use anyhow::Context;
 use chrono::NaiveDate;
+use tracing::{error, info};
 
 use crate::{
     circle::Circle,
     genre::Genre,
-    product::{AgeRating, WorkType},
+    interface::{AgeCategory, WorkType},
     DlsiteClient,
 };
 
@@ -25,14 +26,14 @@ async fn get_product_1_content() {
             id: "RG62982".to_string()
         }
     );
-    assert_eq!(res.work_type, WorkType::Voice);
+    assert_eq!(res.work_type, WorkType::SOU);
     assert_eq!(
         res.released_at,
         NaiveDate::from_ymd_opt(2022, 7, 17).unwrap()
     );
-    assert_eq!(res.age_rating, AgeRating::AllAges);
+    assert_eq!(res.age_rating, AgeCategory::General);
     assert_eq!(res.people.voice_actor, Some(vec!["春花らん".to_string()]));
-    assert!(res.sale_count > 50000);
+    assert!(res.sale_count.unwrap() > 50000);
     assert!(res.genre.contains(&Genre {
         name: "ASMR".to_string(),
         id: "497".to_string()
@@ -61,22 +62,39 @@ async fn get_product_2() {
             id: "RG24350".to_string()
         }
     );
-    assert_eq!(res.work_type, WorkType::Voice);
+    assert_eq!(res.work_type, WorkType::SOU);
     assert_eq!(
         res.released_at,
         NaiveDate::from_ymd_opt(2023, 1, 21).unwrap()
     );
-    assert_eq!(res.age_rating, AgeRating::Adult);
+    assert_eq!(res.age_rating, AgeCategory::Adult);
     assert_eq!(
         res.people.voice_actor,
         Some(vec!["丹羽うさぎ".to_string(), "藤堂れんげ".to_string()])
     );
     assert_eq!(res.people.author, Some(vec!["桃鳥".to_string()]));
-    assert!(res.sale_count > 10000);
+    assert!(res.sale_count.unwrap() > 10000);
     assert!(res.genre.contains(&Genre {
         name: "ASMR".to_string(),
         id: "497".to_string()
     }));
 
     dbg!(&res);
+}
+
+#[tokio::test]
+async fn get_product_otome() {
+    let client = DlsiteClient::default();
+    let res = client.get_product("RJ01084246").await.unwrap();
+}
+
+#[tokio::test]
+async fn get_product_soft() {
+    tracing_subscriber::fmt::init();
+    let client = DlsiteClient::default();
+    let res = client.get_product("VJ01000513").await;
+    if let Err(e) = res {
+        error!("{:?}", e);
+        panic!()
+    }
 }

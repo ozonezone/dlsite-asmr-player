@@ -1,17 +1,15 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, str::FromStr};
 
 use serde::{Deserialize, Deserializer};
 
-use crate::{DlsiteClient, DlsiteError, Result};
-
-use super::WorkType;
+use crate::{interface::WorkType, DlsiteClient, DlsiteError, Result};
 
 /// Data of a product from the AJAX API.
 #[derive(Debug, Clone, Deserialize)]
 pub struct ProductAjax {
     pub maker_id: String,
-    #[serde(deserialize_with = "serde_aux::prelude::deserialize_number_from_string")]
-    pub dl_count: i32,
+    #[serde(deserialize_with = "serde_aux::prelude::deserialize_option_number_from_string")]
+    pub dl_count: Option<i32>,
     #[serde(deserialize_with = "serde_aux::prelude::deserialize_option_number_from_string")]
     pub review_count: Option<i32>,
     pub rate_average_2dp: Option<f32>,
@@ -28,10 +26,7 @@ where
 {
     let s: String = Deserialize::deserialize(deserializer)?;
 
-    Ok(match &*s {
-        "SOU" => WorkType::Voice,
-        _ => WorkType::Unknown,
-    })
+    WorkType::from_str(&s).map_err(serde::de::Error::custom)
 }
 
 impl DlsiteClient {

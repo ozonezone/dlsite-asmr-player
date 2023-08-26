@@ -6,6 +6,7 @@ pub mod circle;
 pub mod genre;
 pub mod product;
 pub mod search;
+pub mod interface;
 mod utils;
 
 #[derive(Debug, Error)]

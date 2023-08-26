@@ -43,7 +43,7 @@ pub struct ProductSearchOptions {
     pub price_high: Option<u32>,
     /// Sales status
     pub ana_flg: Option<AnaFlg>,
-    pub age_category: Option<Vec<AgeCategory>>,
+    pub age_category: Option<Vec<crate::interface::AgeCategory>>,
     pub work_category: Option<Vec<WorkCategory>>,
     pub order: Option<Order>,
     pub work_type_category: Option<Vec<WorkTypeCategory>>,
@@ -200,14 +200,6 @@ pub enum AnaFlg {
 
 #[derive(Display)]
 #[strum(serialize_all = "snake_case")]
-pub enum AgeCategory {
-    R15,
-    Adult,
-    General,
-}
-
-#[derive(Display)]
-#[strum(serialize_all = "snake_case")]
 pub enum WorkCategory {
     /// 同人
     Doujin,
@@ -253,61 +245,6 @@ pub enum WorkTypeCategory {
     Music,
     Tool,
     Etc,
-}
-/// 作品形式(親?/子カテゴリ)
-#[derive(Display, EnumString ,Debug, PartialEq)]
-pub enum WorkType {
-    /// アクション
-    ACN,
-    /// クイズ
-    QIZ,
-    ADV,
-    RPG,
-    TBL,
-    DNV,
-    SLN,
-    TYP,
-    STG,
-    PZL,
-    ETC,
-
-    /// マンガ
-    MNG,
-    /// 劇画
-    SCM,
-    /// webtoon
-    WBT,
-
-    /// CG・イラスト
-    ICG,
-
-    // Novel
-    /// ノベル
-    NRE,
-    /// 官能小説
-    KSV,
-
-    /// 動画
-    MOV,
-
-    /// ボイス・ASMR
-    SOU,
-
-    /// 音楽
-    MUS,
-
-    // Tool
-    /// ツール
-    TOL,
-    /// 画像素材
-    IMT,
-    /// 音素材
-    AMT,
-
-    /// その他
-    ET3,
-    /// ボイスコミック
-    VCM,
 }
 
 #[derive(Display)]

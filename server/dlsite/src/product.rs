@@ -1,4 +1,4 @@
-use crate::{circle::Circle, genre::Genre, DlsiteClient, Result};
+use crate::{circle::Circle, genre::Genre, interface::{WorkType, AgeCategory}, DlsiteClient, Result};
 use chrono::NaiveDate;
 use url::Url;
 
@@ -8,14 +8,6 @@ pub mod review;
 #[cfg(test)]
 mod tests;
 
-/// The age rating of a product on DLsite.
-#[derive(Debug, PartialEq, Eq)]
-pub enum AgeRating {
-    AllAges,
-    R,
-    Adult,
-}
-
 /// A product on DLsite.
 #[derive(Debug)]
 pub struct Product {
@@ -23,12 +15,12 @@ pub struct Product {
     pub title: String,
     pub work_type: WorkType,
     pub released_at: NaiveDate,
-    pub age_rating: AgeRating,
+    pub age_rating: AgeCategory,
     pub genre: Vec<Genre>,
     pub circle: Circle,
     pub price: i32,
     pub series: Option<String>,
-    pub sale_count: i32,
+    pub sale_count: Option<i32>,
     pub review_count: Option<i32>,
     pub rating: Option<f32>,
     pub rate_count: Option<i32>,
@@ -44,13 +36,6 @@ pub struct ProductPeople {
     pub scenario: Option<Vec<String>>,
     pub illustrator: Option<Vec<String>>,
     pub voice_actor: Option<Vec<String>>,
-}
-
-/// The type of a product on DLsite. Currently, only voice products are supported.
-#[derive(Debug, PartialEq, Eq, Clone)]
-pub enum WorkType {
-    Voice,
-    Unknown,
 }
 
 impl DlsiteClient {

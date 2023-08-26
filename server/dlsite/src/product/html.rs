@@ -4,15 +4,18 @@ use chrono::NaiveDate;
 use scraper::{ElementRef, Html, Selector};
 use url::Url;
 
-use crate::{circle::Circle, genre::Genre, utils::ToParseError, DlsiteClient, DlsiteError, Result};
+use crate::{
+    circle::Circle, genre::Genre, interface::AgeCategory, utils::ToParseError, DlsiteClient,
+    DlsiteError, Result,
+};
 
-use super::{AgeRating, ProductPeople};
+use super::ProductPeople;
 
 /// Product data got from html
 #[derive(Debug)]
 pub struct ProductHtml {
     pub released_at: NaiveDate,
-    pub age_rating: AgeRating,
+    pub age_rating: AgeCategory,
     pub circle: Circle,
     pub images: Vec<Url>,
     pub people: ProductPeople,
@@ -22,7 +25,7 @@ pub struct ProductHtml {
 
 impl DlsiteClient {
     /// Get and parse the HTML page of a product.
-#[tracing::instrument(err)]
+    #[tracing::instrument(err)]
     pub async fn get_product_html(&self, product_id: &str) -> Result<ProductHtml> {
         let path = format!("/work/=/product_id/{}", product_id);
         let html = self.get(&path).await?;
@@ -97,9 +100,9 @@ fn parse_product_html(html: &Html) -> Result<ProductHtml> {
         .to_parse_error("No age rating found")?
         .inner_html();
     let age_rating = match &*age_rating {
-        "全年齢" => AgeRating::AllAges,
-        "18禁" => AgeRating::Adult,
-        _ => AgeRating::R,
+        "全年齢" => AgeCategory::General,
+        "18禁" => AgeCategory::Adult,
+        _ => AgeCategory::R15,
     };
 
     let series = work_outline_table.get("シリーズ名");

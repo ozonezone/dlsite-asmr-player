@@ -24,7 +24,7 @@ pub struct SearchResult {
     pub review_count: Option<i32>,
     pub price_original: i32,
     pub price_sale: Option<i32>,
-    pub work_type: options::WorkType,
+    pub work_type: crate::interface::WorkType,
     pub thumbnail_url: String,
     // pub image_url: Option<String>,
 }
@@ -239,7 +239,7 @@ mod tests {
                 assert!(r.review_count.is_some());
                 assert_eq!("RG62982", r.circle_id);
                 assert_eq!("Yostar", r.circle_name);
-                assert_eq!(WorkType::SOU, r.work_type);
+                assert_eq!(crate::interface::WorkType::SOU, r.work_type);
             }
         });
     }
