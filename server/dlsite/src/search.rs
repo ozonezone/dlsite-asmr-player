@@ -19,12 +19,14 @@ pub struct SearchResult {
     pub title: String,
     pub circle_name: String,
     pub circle_id: String,
-    pub dl_count: i32,
+    pub dl_count: Option<i32>,
     pub rate_count: Option<i32>,
     pub review_count: Option<i32>,
     pub price_original: i32,
     pub price_sale: Option<i32>,
     pub work_type: options::WorkType,
+    pub thumbnail_url: String,
+    // pub image_url: Option<String>,
 }
 
 fn parse_count_str(str: &str) -> Result<i32> {
@@ -40,6 +42,10 @@ fn parse_num_str(str: &str) -> Result<i32> {
 }
 
 impl DlsiteClient {
+    /// Search products on DLsite.
+    ///
+    /// # Arguments
+    /// * `options` - Struct of search options.
     pub async fn search_product(
         &self,
         options: &ProductSearchOptions,
@@ -74,12 +80,13 @@ impl DlsiteClient {
             } else {
                 (None, price_e)
             };
+            let id = data_e
+                .attr("data-product_id")
+                .to_parse_error("Failed to get product id")?
+                .to_string();
 
             result.push(SearchResult {
-                id: data_e
-                    .attr("data-product_id")
-                    .to_parse_error("Failed to get product id")?
-                    .to_string(),
+                id: id.clone(),
                 title: item_element
                     .select(&Selector::parse(".work_name a[title]").unwrap())
                     .next()
@@ -100,16 +107,23 @@ impl DlsiteClient {
                     .next()
                     .to_parse_error("Failed to find maker id")?
                     .to_string(),
-                dl_count: item_element
-                    .select(&Selector::parse(".work_dl span[class*=\"dl_count\"]").unwrap())
-                    .next()
-                    .to_parse_error("Failed to get dl count element")?
-                    .text()
-                    .next()
-                    .to_parse_error("Failed to get dl count")?
-                    .replace(',', "")
-                    .parse()
-                    .to_parse_error("Invalid dl count")?,
+                dl_count: {
+                    if let Some(e) = item_element
+                        .select(&Selector::parse(".work_dl span[class*=\"dl_count\"]").unwrap())
+                        .next()
+                    {
+                        Some(
+                            e.text()
+                                .next()
+                                .to_parse_error("Failed to get dl count")?
+                                .replace(',', "")
+                                .parse()
+                                .to_parse_error("Invalid dl count")?,
+                        )
+                    } else {
+                        None
+                    }
+                },
                 rate_count: {
                     if let Some(e) = item_element
                         .select(&Selector::parse(".work_dl span[class*=\"dl_count\"]").unwrap())
@@ -154,7 +168,40 @@ impl DlsiteClient {
                     .attr("data-worktype")
                     .to_parse_error("Failed to find worktype")?
                     .try_into()
-                    .to_parse_error("Failed to parse worltype")?,
+                    .to_parse_error("Failed to parse worktype")?,
+                thumbnail_url: {
+                    let img_e = item_element
+                        .select(&Selector::parse(".work_thumb_inner > img").unwrap())
+                        .next()
+                        .to_parse_error("Failed to find thumbnail")?;
+
+                    let src = img_e.value().attr("src");
+                    let data_src = img_e.value().attr("data-src");
+                    match (src, data_src) {
+                        (Some(src), _) => format!("https:{}", src),
+                        (_, Some(data_src)) => format!("https:{}", data_src),
+                        (_, _) => {
+                            return Err(crate::DlsiteError::ParseError(
+                                "Failed to find thumbnail".to_string(),
+                            ))
+                        }
+                    }
+                },
+                // image_url: {
+                //     if let Some(e) = item_element
+                //         .select(&Selector::parse(".work_img_popover img").unwrap())
+                //         .next()
+                //     {
+                //         Some(
+                //             e.value()
+                //                 .attr("src")
+                //                 .to_parse_error("Failed to get image url")?
+                //                 .to_string(),
+                //         )
+                //     } else {
+                //         None
+                //     }
+                // },
             })
         }
 
@@ -187,7 +234,7 @@ mod tests {
         res.iter().for_each(|r| {
             if r.id == "RJ403038" {
                 assert_eq!(1320, r.price_original);
-                assert!(r.dl_count > 62000);
+                assert!(r.dl_count.unwrap() > 62000);
                 assert!(r.rate_count.is_some());
                 assert!(r.review_count.is_some());
                 assert_eq!("RG62982", r.circle_id);
@@ -195,5 +242,35 @@ mod tests {
                 assert_eq!(WorkType::SOU, r.work_type);
             }
         });
+    }
+
+    #[tokio::test]
+    async fn search_product_2() {
+        let client = DlsiteClient::default();
+        let mut opts = super::ProductSearchOptions {
+            sex_category: Some(vec![SexCategory::Male]),
+            order: Some(Order::Trend),
+            per_page: Some(50),
+            ..Default::default()
+        };
+
+        let res = client
+            .search_product(&opts)
+            .await
+            .expect("Failed to search page 1");
+        res.iter().for_each(|i| {
+            url::Url::parse(&i.thumbnail_url).expect("Failed to parse url");
+        });
+        assert_eq!(50, res.len());
+
+        opts.page = Some(2);
+        let res = client
+            .search_product(&opts)
+            .await
+            .expect("Failed to search page 2");
+        res.iter().for_each(|i| {
+            url::Url::parse(&i.thumbnail_url).expect("Failed to parse url");
+        });
+        assert_eq!(50, res.len());
     }
 }
