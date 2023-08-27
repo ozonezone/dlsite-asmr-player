@@ -1,9 +1,10 @@
 //! Common used interfaces.
 
+use serde_with::DeserializeFromStr;
 use strum::{Display, EnumString};
 
 /// Work category
-#[derive(Display, EnumString, Debug, PartialEq, Clone)]
+#[derive(Display, EnumString, Debug, PartialEq, Clone, DeserializeFromStr)]
 pub enum WorkType {
     /// アクション
     ACN,
@@ -57,7 +58,8 @@ pub enum WorkType {
     /// ボイスコミック
     VCM,
 
-    Unknown,
+    #[strum(default)]
+    Unknown(String),
 }
 
 /// Age category

@@ -4,7 +4,11 @@ pub mod options;
 use scraper::{Html, Selector};
 use serde::Deserialize;
 
-use crate::{interface::AgeCategory, utils::ToParseError, DlsiteClient, Result};
+use crate::{
+    interface::{AgeCategory, WorkType},
+    utils::ToParseError,
+    DlsiteClient, Result,
+};
 
 use self::options::ProductSearchOptions;
 
@@ -206,13 +210,17 @@ pub(crate) fn parse_search_html(html: &str) -> Result<Vec<SearchResult>> {
                 .split(' ')
                 .find_map(|c| {
                     if let Some(c) = c.strip_prefix("type_") {
-                        if let Ok(wt) = c.parse::<crate::interface::WorkType>() {
-                            return Some(wt);
+                        if let Ok(wt) = c.parse::<WorkType>() {
+                            if let WorkType::Unknown(_) = wt {
+                                return None;
+                            } else {
+                                return Some(wt);
+                            }
                         }
                     }
                     None
                 })
-                .unwrap_or(crate::interface::WorkType::Unknown),
+                .unwrap_or(crate::interface::WorkType::Unknown("".to_string())),
             thumbnail_url: {
                 let img_e = item_element
                     .select(&Selector::parse(".work_thumb_inner > img").unwrap())

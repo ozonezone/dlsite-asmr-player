@@ -35,7 +35,7 @@ impl DlsiteClient {
 
 #[cfg(test)]
 mod tests {
-    use crate::{search::options::*, DlsiteClient};
+    use crate::{DlsiteClient};
 
     #[tokio::test]
     async fn get_circle_1() {

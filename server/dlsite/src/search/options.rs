@@ -1,3 +1,4 @@
+use serde_with::DeserializeFromStr;
 use strum::{Display, EnumString};
 
 use crate::search::macros::*;
@@ -152,7 +153,7 @@ pub enum AnaFlg {
     All,
 }
 
-#[derive(Display)]
+#[derive(Display, EnumString, DeserializeFromStr, Debug, Clone)]
 #[strum(serialize_all = "snake_case")]
 pub enum WorkCategory {
     /// 同人
@@ -163,6 +164,9 @@ pub enum WorkCategory {
     Pc,
     /// スマホゲーム
     App,
+
+    #[strum(default)]
+    Unknown(String),
 }
 
 #[derive(Display)]
@@ -208,7 +212,7 @@ pub enum OptionAndOr {
     Or,
 }
 
-#[derive(Display, EnumString)]
+#[derive(Display, EnumString, Debug, Clone, DeserializeFromStr)]
 pub enum FileType {
     EXE,
     HTI,
@@ -234,6 +238,9 @@ pub enum FileType {
     PDF,
     APK,
     ET1,
+
+    #[strum(default)]
+    Unknown(String),
 }
 
 #[derive(Display)]
