@@ -3,18 +3,19 @@ use std::collections::HashMap;
 use either::Either;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
+use serde_with::{serde_as, DefaultOnError};
 
 use crate::{
-    interface::WorkType,
-    search::options::{FileType, WorkCategory},
+    interface::{AgeCategory, FileType, WorkCategory, WorkType},
     DlsiteClient, DlsiteError, Result,
 };
 
 pub type ProductApiResult = Vec<ProductApiContent>;
 
+#[serde_as]
 #[derive(Debug, Clone, Deserialize)]
 pub struct ProductApiContent {
-    pub age_category: i64,
+    pub age_category: AgeCategory,
     pub age_category_string: String,
     pub anime: Option<String>,
     pub auto_play: Option<String>,
@@ -133,8 +134,8 @@ pub struct ProductApiContent {
     #[serde(with = "either::serde_untagged")]
     pub trials_touch: Either<Vec<File>, bool>,
     pub movies: bool,
-    // Array | EpubSample
-    pub epub_sample: Value,
+    #[serde_as(deserialize_as = "DefaultOnError")]
+    pub epub_sample: Option<EpubSample>,
     pub sample_type: String,
     pub is_viewable_sample: bool,
     pub campaign_id: Option<i64>,
@@ -186,7 +187,9 @@ pub struct ProductApiContent {
     pub free_end_date: Option<bool>,
     pub has_free_download: bool,
     pub limited_free_terms: Vec<String>,
-    pub creaters: Value,
+    #[serde(default)]
+    #[serde(rename = "creaters")]
+    pub creators: Option<Creators>,
     pub title_id: Option<String>,
     pub title_name: Option<String>,
     pub title_volumn: Option<i64>,
@@ -358,15 +361,6 @@ pub struct TranslationInfo {
 }
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
-pub struct RateCountDetail {
-    pub n1: i64,
-    pub n2: i64,
-    pub n3: i64,
-    pub n4: i64,
-    pub n5: i64,
-}
-
-#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct ReserveWork {
     pub workno: String,
     pub status: String,
@@ -422,7 +416,33 @@ pub struct Author {
     pub upper_books_work_author_author_id: String,
 }
 
+#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct Creators {
+    created_by: Option<Vec<Creator>>,
+    voice_by: Option<Vec<Creator>>,
+}
+
+#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct Creator {
+    id: String,
+    name: String,
+    classification: String,
+    sub_classification: Option<String>,
+}
+
 impl DlsiteClient {
+    /// Get product detail using api.
+    ///
+    /// # Arguments
+    /// * `id` - Product ID.
+    ///
+    /// # Returns
+    /// * `ProductApiContent` - Product details.
+    ///
+    /// # Note
+    /// This api does not return dl count.
+    /// And because of confusing specification of api, serde::Value is used in some place.
+    /// Instead of this you also can use `DlsiteClient.get_product` which scrapes html.
     pub async fn get_product_api(&self, id: &str) -> Result<ProductApiContent> {
         let json = self
             .get(&format!("/api/=/product.json?workno={}", id))
@@ -440,7 +460,7 @@ impl DlsiteClient {
             }
             Err(e) => Err(DlsiteError::ParseError(format!(
                 "Failed to parse json: {}",
-                e.to_string()
+                e
             ))),
         }
     }
@@ -451,7 +471,12 @@ mod test {
     use anyhow::Context;
     use rand::Rng;
 
-    use crate::{interface::WorkType, DlsiteClient};
+    use super::Genre;
+    use crate::{
+        interface::{AgeCategory, WorkType},
+        DlsiteClient,
+    };
+    use test_case::test_case;
 
     #[tokio::test]
     async fn get_product_api_1_content() {
@@ -482,44 +507,32 @@ mod test {
             "【イヤーキャンドル】道草屋-なつな3-たぬさんこんにちは【ずぶ濡れシャンプー】"
                 .to_string()
         );
-        // assert_eq!(res.circle_name, "桃色CODE");
-        // assert_eq!(res.circle_id, "RG24350");
+        assert_eq!(res.maker_name, "桃色CODE");
+        assert_eq!(res.circle_id, Some("RG24350".to_string()));
         //
-        // assert_eq!(res.work_type, WorkType::SOU);
-        // assert_eq!(
-        //     res.released_at,
-        //     NaiveDate::from_ymd_opt(2023, 1, 21).unwrap()
-        // );
-        // assert_eq!(res.age_rating, AgeCategory::Adult);
-        // assert_eq!(
-        //     res.people.voice_actor,
-        //     Some(vec!["丹羽うさぎ".to_string(), "藤堂れんげ".to_string()])
-        // );
-        // assert_eq!(res.people.author, Some(vec!["桃鳥".to_string()]));
-        // assert!(res.sale_count.unwrap() > 10000);
-        // assert!(res.genre.contains(&Genre {
-        //     name: "ASMR".to_string(),
-        //     id: "497".to_string()
-        // }));
+        assert_eq!(res.work_type, WorkType::SOU);
+        assert_eq!(res.age_category, AgeCategory::Adult);
+        let creators = res.creators.unwrap();
+        let voice_by = creators.voice_by.unwrap();
+        let created_by = creators.created_by.unwrap();
+        assert_eq!(voice_by[0].name, "丹羽うさぎ");
+        assert_eq!(voice_by[1].name, "藤堂れんげ");
+        assert_eq!(created_by[0].name, "桃鳥");
+        assert!(res.genres.contains(&Genre {
+            name: "ASMR".to_string(),
+            id: 497,
+            search_val: "497".to_string(),
+            name_base: "ASMR".to_string()
+        }));
     }
 
+    #[test_case("RJ01084246"; "otome")]
+    #[test_case("VJ01000513"; "soft")]
+    #[test_case("RJ411991"; "normal")]
     #[tokio::test]
-    async fn get_product_api_otome() {
+    async fn get_product_api_success(id: &str) {
         let client = DlsiteClient::default();
-        client.get_product_api("RJ01084246").await.unwrap();
-    }
-
-    #[tokio::test]
-    async fn get_product_api_soft() {
-        tracing_subscriber::fmt::try_init();
-        let client = DlsiteClient::default();
-        let res = client.get_product_api("VJ01000513").await.unwrap();
-    }
-
-    #[tokio::test]
-    async fn get_product_api_test() {
-        let client = DlsiteClient::default();
-        client.get_product_api("RJ411991").await.unwrap();
+        client.get_product_api(id).await.unwrap();
     }
 
     #[tokio::test]
@@ -532,7 +545,6 @@ mod test {
 
     #[tokio::test]
     async fn get_product_api_rand_rj() {
-        tracing_subscriber::fmt::try_init();
         let mut rng = rand::thread_rng();
         let mut i = 0;
         loop {
@@ -552,7 +564,7 @@ mod test {
                 println!("Testing for {}: Invalid id", id);
                 continue;
             }
-            let res = client.get_product_api(&id).await.unwrap();
+            client.get_product_api(&id).await.unwrap();
 
             i += 1;
             if i >= 5 {

@@ -33,7 +33,7 @@ mod tests {
     use crate::search::options::Order;
 
     #[test]
-    fn circle_param_default() {
+    fn circle_param() {
         assert_eq!(
             "/circle/profile/=/show_type/3/hd/1/without_order/1/maker_id/RG24350.html",
             super::CircleQueryOptions::default().to_path("RG24350")

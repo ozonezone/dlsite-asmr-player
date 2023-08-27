@@ -23,9 +23,11 @@ strum = { version = "0.25", features = ["derive"] }
 serde_with = {version="3.3.0", features=["macros"]}
 serde_path_to_error = "0.1"
 either = {version="1.9.0",features=["serde"]}
+serde_repr = "0.1.16"
 
 [dev-dependencies]
 tokio = { version = "1", features = ["full"] }
 anyhow = { version = "1", features = ["backtrace", "std"] }
 tracing-subscriber = "0.3"
 rand = "0.8"
+test-case = "3.1.0"

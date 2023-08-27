@@ -1,5 +1,6 @@
 //! Common used interfaces.
 
+use serde_repr::{Deserialize_repr, Serialize_repr};
 use serde_with::DeserializeFromStr;
 use strum::{Display, EnumString};
 
@@ -63,10 +64,63 @@ pub enum WorkType {
 }
 
 /// Age category
-#[derive(Display, Debug, Clone, PartialEq)]
+#[derive(Display, Debug, Clone, PartialEq, Deserialize_repr, Serialize_repr)]
+#[repr(u16)]
 #[strum(serialize_all = "snake_case")]
 pub enum AgeCategory {
-    R15,
-    Adult,
-    General,
+    #[serde(with = "i8")]
+    General = 1,
+    #[serde(with = "i8")]
+    R15 = 2,
+    #[serde(with = "i8")]
+    Adult = 3,
+}
+
+/// Work category (parent category)
+#[derive(Display, EnumString, DeserializeFromStr, Debug, Clone)]
+#[strum(serialize_all = "snake_case")]
+pub enum WorkCategory {
+    /// 同人
+    Doujin,
+    /// Adult: 成年コミック
+    Books,
+    /// Adult: 美少女ゲーム, General: PCソフト
+    Pc,
+    /// スマホゲーム
+    App,
+
+    #[strum(default)]
+    Unknown(String),
+}
+
+/// File type
+#[derive(Display, EnumString, Debug, Clone, DeserializeFromStr)]
+pub enum FileType {
+    EXE,
+    HTI,
+    HTE,
+    HMO,
+    IJP,
+    IGF,
+    IME,
+    IBP,
+    PNG,
+    AVI,
+    MVF,
+    MPG,
+    MWM,
+    MP4,
+    AAC,
+    WAV,
+    MP3,
+    ADO,
+    WMA,
+    FLC,
+    OGG,
+    PDF,
+    APK,
+    ET1,
+
+    #[strum(default)]
+    Unknown(String),
 }

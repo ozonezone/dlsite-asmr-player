@@ -1,7 +1,8 @@
-use serde_with::DeserializeFromStr;
-use strum::{Display, EnumString};
+//! Search options for dlsite product search
 
-use crate::search::macros::*;
+use strum::Display;
+
+use crate::{interface::{FileType, WorkCategory}, search::macros::*};
 
 // Struct that can be converted dlsite url (below is example). All params are optional.
 // https://www.dlsite.com/maniax/fsr/=
@@ -153,22 +154,6 @@ pub enum AnaFlg {
     All,
 }
 
-#[derive(Display, EnumString, DeserializeFromStr, Debug, Clone)]
-#[strum(serialize_all = "snake_case")]
-pub enum WorkCategory {
-    /// 同人
-    Doujin,
-    /// Adult: 成年コミック
-    Books,
-    /// Adult: 美少女ゲーム, General: PCソフト
-    Pc,
-    /// スマホゲーム
-    App,
-
-    #[strum(default)]
-    Unknown(String),
-}
-
 #[derive(Display)]
 #[strum(serialize_all = "snake_case")]
 pub enum Order {
@@ -210,37 +195,6 @@ pub enum WorkTypeCategory {
 pub enum OptionAndOr {
     And,
     Or,
-}
-
-#[derive(Display, EnumString, Debug, Clone, DeserializeFromStr)]
-pub enum FileType {
-    EXE,
-    HTI,
-    HTE,
-    HMO,
-    IJP,
-    IGF,
-    IME,
-    IBP,
-    PNG,
-    AVI,
-    MVF,
-    MPG,
-    MWM,
-    MP4,
-    AAC,
-    WAV,
-    MP3,
-    ADO,
-    WMA,
-    FLC,
-    OGG,
-    PDF,
-    APK,
-    ET1,
-
-    #[strum(default)]
-    Unknown(String),
 }
 
 #[derive(Display)]

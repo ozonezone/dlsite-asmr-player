@@ -88,7 +88,7 @@ async fn get_product_otome() {
 
 #[tokio::test]
 async fn get_product_soft() {
-    tracing_subscriber::fmt::try_init();
+    let _ = tracing_subscriber::fmt::try_init();
     let client = DlsiteClient::default();
     let res = client.get_product("VJ01000513").await;
     if let Err(e) = res {
