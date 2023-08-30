@@ -12,7 +12,7 @@
     "build:docker": "cd server && docker build -t dap:latest .",
     "server:db:up": "cd server && docker-compose up -d",
     "server:db:down": "cd server && docker-compose down",
-    "server:db:generate": "cd server && sea generate entity -u postgresql://sample:password@localhost:5432/db -o entity/src/entities/ --with-serde both  --model-extra-derives \"rspc::Type\""
+    "server:db:generate": "cd server && dotenv -e .env -- sea generate entity -o entity/src/entities/ --with-serde both  --model-extra-derives \"rspc::Type\""
   },
   "devDependencies": {
     "dotenv-cli": "^7.3.0",
