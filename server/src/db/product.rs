@@ -1,190 +1,158 @@
 use std::path::PathBuf;
 
+use chrono::{DateTime, FixedOffset, NaiveDateTime, NaiveTime};
 use dlsite::product::Product;
-use entity::entities::{circle, genre, product, product_genre, product_user_genre};
-use migration::OnConflict;
-use sea_orm::{
-    ColumnTrait, DatabaseConnection, DbErr, EntityTrait, QueryFilter, Set, TransactionError,
-    TransactionTrait,
+use prisma_client_rust::queries::Result;
+
+use crate::{
+    prisma::{circle, genre, product, product_genre, product_user_genre},
+    Db,
 };
 
-#[tracing::instrument(err)]
-pub async fn create_product(
-    db: &DatabaseConnection,
-    product: Product,
-    path: PathBuf,
-) -> Result<(), anyhow::Error> {
-    circle::Entity::insert(circle::ActiveModel {
-        id: Set(product.circle_id.clone()),
-        name: Set(product.circle_name),
-    })
-    .on_conflict(
-        OnConflict::column(circle::Column::Id)
-            .update_columns([circle::Column::Name])
-            .to_owned(),
-    )
-    .exec(db)
-    .await?;
+impl From<dlsite::interface::AgeCategory> for crate::prisma::AgeCategory {
+    fn from(value: dlsite::interface::AgeCategory) -> Self {
+        match value {
+            dlsite::interface::AgeCategory::General => Self::General,
+            dlsite::interface::AgeCategory::R15 => Self::R15,
+            dlsite::interface::AgeCategory::Adult => Self::Adult,
+        }
+    }
+}
 
-    product::Entity::insert(product::ActiveModel {
-        id: Set(product.id.clone()),
-        name: Set(product.title),
-        description: Set(None),
-        series: Set(product.series),
-        circle_id: Set(product.circle_id),
-        image: Set(product
-            .images
-            .iter()
-            .map(|i| i.to_string())
-            .collect::<Vec<_>>()),
-        actor: Set(product.people.voice_actor.unwrap_or_default()),
-        author: Set(product.people.author.unwrap_or_default()),
-        illustrator: Set(product.people.illustrator.unwrap_or_default()),
-        price: Set(product.price),
-        sale_count: Set(product.sale_count.unwrap_or(0)),
-        age: Set(match product.age_rating {
-            dlsite::interface::AgeCategory::General => {
-                entity::entities::sea_orm_active_enums::Age::All
-            }
-            dlsite::interface::AgeCategory::R15 => entity::entities::sea_orm_active_enums::Age::R,
-            dlsite::interface::AgeCategory::Adult => {
-                entity::entities::sea_orm_active_enums::Age::Adult
-            }
-        }),
-        released_at: Set(product.released_at),
-        rating: Set(product.rating),
-        rating_count: Set(product.rate_count.unwrap_or(0)),
-        comment_count: Set(product.review_count.unwrap_or(0)),
-        path: Set(path.to_string_lossy().to_string()),
-    })
-    .on_conflict(
-        OnConflict::column(product::Column::Id)
-            .update_columns([
-                product::Column::Name,
-                product::Column::Description,
-                product::Column::Series,
-                product::Column::CircleId,
-                product::Column::Image,
-                product::Column::Actor,
-                product::Column::Author,
-                product::Column::Illustrator,
-                product::Column::Price,
-                product::Column::SaleCount,
-                product::Column::Age,
-                product::Column::ReleasedAt,
-                product::Column::Rating,
-                product::Column::RatingCount,
-                product::Column::CommentCount,
-                product::Column::Path,
-            ])
-            .to_owned(),
-    )
-    .exec(db)
-    .await?;
+#[tracing::instrument(err, skip_all)]
+pub async fn upsert_product(db: Db, product: Product, path: PathBuf) -> Result<()> {
+    db.circle()
+        .upsert(
+            circle::id::equals(product.circle_id.clone()),
+            circle::create(
+                product.circle_id.clone(),
+                product.circle_name.clone(),
+                vec![],
+            ),
+            vec![
+                circle::id::set(product.circle_id.clone()),
+                circle::name::set(product.circle_name),
+            ],
+        )
+        .exec()
+        .await?;
 
-    let genre_on_conflict = OnConflict::column(genre::Column::Id)
-        .update_columns([genre::Column::Id])
-        .to_owned();
+    let released_at = DateTime::from_local(
+        NaiveDateTime::new(
+            product.released_at,
+            NaiveTime::from_hms_opt(0, 0, 0).unwrap(),
+        ),
+        FixedOffset::east_opt(-9 * 3600).unwrap(),
+    );
+    db.product()
+        .upsert(
+            product::id::equals(product.id.clone()),
+            product::create(
+                product.id.clone(),
+                product.title.clone(),
+                circle::id::equals(product.circle_id.clone()),
+                product.price,
+                product.sale_count.unwrap_or(0),
+                product.age_rating.clone().into(),
+                released_at,
+                product.rate_count.unwrap_or(0),
+                product.review_count.unwrap_or(0),
+                path.to_string_lossy().to_string(),
+                vec![
+                    product::series::set(product.series.clone()),
+                    product::rating::set(product.rating.map(|r| r.into())),
+                    product::images::set(
+                        product.images.into_iter().map(|u| u.to_string()).collect(),
+                    ),
+                ],
+            ),
+            vec![
+                product::id::set(product.id.clone()),
+                product::title::set(product.title.clone()),
+                product::circle_id::set(product.circle_id),
+                product::price::set(product.price),
+                product::sale_count::set(product.sale_count.unwrap_or(0)),
+                product::age::set(product.age_rating.into()),
+                product::released_at::set(released_at),
+                product::rate_count::set(product.rate_count.unwrap_or(0)),
+                product::review_count::set(product.review_count.unwrap_or(0)),
+                product::path::set(path.to_string_lossy().to_string()),
+                product::series::set(product.series),
+                product::rating::set(product.rating.map(|r| r.into())),
+            ],
+        )
+        .exec()
+        .await?;
 
     for genre in product.genre {
         let product_id = product.id.clone();
-        let genre_on_conflict = genre_on_conflict.clone();
-        db.transaction::<_, (), DbErr>(|txn| {
-            Box::pin(async move {
-                genre::Entity::insert(genre::ActiveModel {
-                    id: Set(genre.id.clone()),
-                    name: Set(genre.name.clone()),
-                })
-                .on_conflict(genre_on_conflict)
-                .exec(txn)
-                .await?;
-
-                product_genre::Entity::insert(product_genre::ActiveModel {
-                    product_id: Set(product_id),
-                    genre_id: Set(genre.id),
-                })
-                .on_conflict(
-                    OnConflict::columns([
-                        product_genre::Column::ProductId,
-                        product_genre::Column::GenreId,
-                    ])
-                    .do_nothing()
-                    .to_owned(),
-                )
-                .exec(txn)
-                .await?;
-
-                Ok(())
-            })
-        })
+        db._batch((
+            db.genre().upsert(
+                genre::id::equals(genre.id.clone()),
+                genre::create(genre.id.clone(), genre.name.clone(), vec![]),
+                vec![
+                    genre::id::set(genre.id.clone()),
+                    genre::name::set(genre.name),
+                ],
+            ),
+            db.product_genre().upsert(
+                product_genre::product_id_genre_id(product_id.clone(), genre.id.clone()),
+                product_genre::create(
+                    product::id::equals(product_id.clone()),
+                    genre::id::equals(genre.id.clone()),
+                    vec![],
+                ),
+                vec![
+                    product_genre::product_id::set(product_id),
+                    product_genre::genre_id::set(genre.id.clone()),
+                ],
+            ),
+        ))
         .await?;
     }
 
     for (genre, count) in product.reviewer_genre {
         let product_id = product.id.clone();
-        let genre_on_conflict = genre_on_conflict.clone();
-        db.transaction::<_, (), DbErr>(|txn| {
-            Box::pin(async move {
-                genre::Entity::insert(genre::ActiveModel {
-                    id: Set(genre.id.clone()),
-                    name: Set(genre.name.clone()),
-                })
-                .on_conflict(genre_on_conflict)
-                .exec(txn)
-                .await?;
-
-                product_user_genre::Entity::insert(product_user_genre::ActiveModel {
-                    product_id: Set(product_id),
-                    genre_id: Set(genre.id),
-                    count: Set(count),
-                })
-                .on_conflict(
-                    OnConflict::columns([
-                        product_user_genre::Column::ProductId,
-                        product_user_genre::Column::GenreId,
-                    ])
-                    .update_column(product_user_genre::Column::Count)
-                    .to_owned(),
-                )
-                .exec(txn)
-                .await?;
-
-                Ok(())
-            })
-        })
+        db._batch((
+            db.genre().upsert(
+                genre::id::equals(genre.id.clone()),
+                genre::create(genre.id.clone(), genre.name.clone(), vec![]),
+                vec![
+                    genre::id::set(genre.id.clone()),
+                    genre::name::set(genre.name),
+                ],
+            ),
+            db.product_user_genre().upsert(
+                product_user_genre::product_id_genre_id(product_id.clone(), genre.id.clone()),
+                product_user_genre::create(
+                    product::id::equals(product_id.clone()),
+                    genre::id::equals(genre.id.clone()),
+                    count,
+                    vec![],
+                ),
+                vec![
+                    product_user_genre::product_id::set(product_id),
+                    product_user_genre::genre_id::set(genre.id.clone()),
+                    product_user_genre::count::set(count),
+                ],
+            ),
+        ))
         .await?;
     }
 
     Ok(())
 }
 
-pub async fn delete_product_and_relations(
-    db: &DatabaseConnection,
-    ids: &Vec<String>,
-) -> Result<(), TransactionError<DbErr>> {
+pub async fn delete_product_and_relations(db: Db, ids: &Vec<String>) -> Result<i64> {
     if ids.is_empty() {
-        return Ok(());
+        return Ok(0);
     }
-    db.transaction::<_, (), DbErr>(|txn| {
-        let ids = ids.clone();
-        Box::pin(async move {
-            product_genre::Entity::delete_many()
-                .filter(product_genre::Column::ProductId.is_in(ids.clone()))
-                .exec(txn)
-                .await?;
-            product_user_genre::Entity::delete_many()
-                .filter(product_user_genre::Column::ProductId.is_in(ids.clone()))
-                .exec(txn)
-                .await?;
-            product::Entity::delete_many()
-                .filter(product::Column::Id.is_in(ids))
-                .exec(txn)
-                .await?;
-
-            Ok(())
-        })
-    })
-    .await?;
-
-    Ok(())
+    db.product()
+        .delete_many(
+            ids.iter()
+                .map(|id| product::id::equals(id.clone()))
+                .collect::<Vec<_>>(),
+        )
+        .exec()
+        .await
 }

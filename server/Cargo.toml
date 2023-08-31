@@ -27,11 +27,14 @@ tower = "0.4.13"
 urlencoding = "2.1.2"
 rust-embed = "8"
 mime_guess = "2.0.4"
-sea-orm = "0.12"
-entity = { path = "./entity" }
-migration = { path = "./migration" }
 dlsite = { path = "../dlsite-rs" }
+
+[dependencies.prisma-client-rust]
+git = "https://github.com/Brendonovich/prisma-client-rust"
+tag = "0.6.9"
+default-features = false
+features = ["postgresql", "migrations", "rspc"]
 
 [workspace]
 resolver = "2"
-members = ["migration", "entity"]
+members = ["prisma-cli"]

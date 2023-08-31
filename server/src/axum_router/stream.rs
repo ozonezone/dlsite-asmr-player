@@ -6,11 +6,11 @@ use axum::{
     http::{Request, StatusCode},
     response::IntoResponse,
 };
-use entity::entities::product;
 use sanitize_filename::sanitize;
-use sea_orm::EntityTrait;
 use tower::ServiceExt;
 use tower_http::services::ServeFile;
+
+use crate::prisma::product;
 
 use super::AxumRouterState;
 
@@ -27,8 +27,11 @@ pub(super) async fn stream(
     }
     paths.pop_front();
     let product_id = paths.pop_front().unwrap();
-    let product_root_path = product::Entity::find_by_id(product_id)
-        .one(&state.db)
+    let product_root_path = state
+        .db
+        .product()
+        .find_unique(product::id::equals(product_id.to_string()))
+        .exec()
         .await
         .map_err(|e| {
             (

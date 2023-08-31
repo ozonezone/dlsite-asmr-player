@@ -95,8 +95,8 @@ export function Player(props: { playerData: NonNullable<PlayerData> }) {
           onPlay={() => {
             navigator.mediaSession.metadata = new MediaMetadata({
               title: currentFileName,
-              album: product.product.name,
-              artist: product.circle_name,
+              album: product.title,
+              artist: product.circle.name,
             });
           }}
           onListen={() => {

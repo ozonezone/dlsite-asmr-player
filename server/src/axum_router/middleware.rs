@@ -1,3 +1,5 @@
+use crate::prisma::user;
+
 use super::AxumRouterState;
 use axum::{
     extract::{Query, State},
@@ -5,8 +7,6 @@ use axum::{
     middleware::Next,
     response::IntoResponse,
 };
-use entity::entities::user;
-use sea_orm::EntityTrait;
 use serde::Deserialize;
 
 #[derive(Deserialize)]
@@ -21,8 +21,11 @@ pub(crate) async fn auth_middleware<B>(
 ) -> Result<impl IntoResponse, StatusCode> {
     if let Some(token) = query.token {
         if token
-            == user::Entity::find_by_id(1)
-                .one(&state.db)
+            == state
+                .db
+                .user()
+                .find_unique(user::id::equals(1))
+                .exec()
                 .await
                 .map_err(|_e| StatusCode::INTERNAL_SERVER_ERROR)?
                 .ok_or(StatusCode::INTERNAL_SERVER_ERROR)?

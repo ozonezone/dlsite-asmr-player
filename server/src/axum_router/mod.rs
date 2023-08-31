@@ -1,9 +1,6 @@
 use axum::{middleware::from_fn_with_state, routing::get, Router};
-use sea_orm::DatabaseConnection;
 
-
-
-use crate::{AxumRouterState};
+use crate::{AxumRouterState, Db};
 
 #[cfg(not(debug_assertions))]
 mod frontend;
@@ -12,7 +9,7 @@ mod middleware;
 mod stream;
 
 #[allow(clippy::let_and_return)]
-pub(crate) fn mount(db: DatabaseConnection) -> Router<AxumRouterState> {
+pub(crate) fn mount(db: Db) -> Router<AxumRouterState> {
     let router = axum::Router::new().nest(
         "/stream",
         axum::Router::new()

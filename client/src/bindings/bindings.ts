@@ -6,32 +6,36 @@ export type Procedures = {
         { key: "config.getConfig", input: never, result: Config } | 
         { key: "ping", input: never, result: string } | 
         { key: "ping_auth", input: never, result: string } | 
-        { key: "product.browse", input: BrowseParams, result: [ProductResponse[], number] } | 
+        { key: "product.browse", input: BrowseParams, result: [ProductDetailed[], number] } | 
         { key: "product.files", input: string, result: string[][] } | 
-        { key: "product.get", input: string, result: ProductResponse },
+        { key: "product.get", input: string, result: ProductDetailed },
     mutations: 
         { key: "config.setConfig", input: Config, result: string } | 
-        { key: "config.setPassword", input: NewPasswordArgs, result: null } | 
+        { key: "config.setPassword", input: NewPasswordArgs, result: User } | 
         { key: "scan.start", input: boolean, result: null },
     subscriptions: never
 };
 
-export type Config = { scan_dir: string[] }
-
-export type Model = { id: string; name: string; circle_id: string; actor: string[]; author: string[]; illustrator: string[]; price: number; sale_count: number; age: Age; released_at: string; rating_count: number; comment_count: number; path: string; image: string[]; description: string | null; series: string | null; rating: number | null }
-
-export type SortType = "Name" | "Date"
-
-export type Genre = { id: string; name: string }
-
-export type BrowseParams = { sort_type: SortType; sort_order: SortOrder; page: number; limit: number }
-
 export type NewPasswordArgs = { password: string; new_password: string }
 
-export type Age = "Adult" | "All" | "R"
+export type Config = { scan_dir: string[] }
 
-export type ProductResponse = { product: Model; genre: Genre[]; user_genre: UserGenre[]; circle_name: string }
+export type Creator = { creator_id: string; role: CreatorRole }
+
+export type ProductDetailed = { id: string; title: string; circleId: string; price: number; sale_count: number; age: AgeCategory; released_at: string; rate_count: number; review_count: number; path: string; images: string[]; description: string | null; series: string | null; rating: number | null; created_at: string; updated_at: string; circle: Circle; genres: { productId: string; genreId: string; genre: Genre }[]; user_genres: { productId: string; genreId: string; count: number; genre: Genre }[]; creators: Creator[] }
+
+export type Circle = { id: string; name: string }
 
 export type SortOrder = "Asc" | "Desc"
 
-export type UserGenre = { id: string; name: string; count: number }
+export type CreatorRole = "VoiceActor" | "Creator" | "Illustrator"
+
+export type BrowseParams = { sort_type: SortType; sort_order: SortOrder; page: number; limit: number }
+
+export type Genre = { id: string; name: string }
+
+export type User = { id: number; name: string; password: string; created_at: string }
+
+export type SortType = "Name" | "Date"
+
+export type AgeCategory = "General" | "R15" | "Adult"

@@ -1,13 +1,12 @@
 use std::sync::Arc;
 
-use entity::entities::user;
 use rspc::integrations::httpz::Request;
 use rspc::{ErrorCode, Router};
-use sea_orm::{DatabaseConnection, EntityTrait};
 use tokio::sync::RwLock;
 
 use crate::config::Config;
-use crate::AxumRouterState;
+use crate::prisma::user;
+use crate::{AxumRouterState, Db};
 
 use self::utils::ToRspcInternalError;
 
@@ -19,10 +18,17 @@ mod utils;
 
 type RouterBuilder = rspc::RouterBuilder<RouterContext>;
 
+pub(crate) struct UnauthenticatedRouterContext {
+    pub config: Arc<RwLock<Config>>,
+    pub db: Db,
+    pub token: Option<String>,
+    pub scan_status: Arc<RwLock<ScanStatus>>,
+}
+
 pub(crate) struct RouterContext {
     pub config: Arc<RwLock<Config>>,
-    pub db: DatabaseConnection,
-    pub token: Option<String>,
+    pub db: Db,
+    pub user_id: i32,
     pub scan_status: Arc<RwLock<ScanStatus>>,
 }
 
@@ -31,10 +37,7 @@ pub(crate) struct ScanStatus {
     pub is_scanning: bool,
 }
 
-pub(crate) fn mount(
-    config: Arc<RwLock<Config>>,
-    db: DatabaseConnection,
-) -> axum::Router<AxumRouterState> {
+pub(crate) fn mount(config: Arc<RwLock<Config>>, db: Db) -> axum::Router<AxumRouterState> {
     let scan_status = Arc::new(RwLock::new(ScanStatus { is_scanning: false }));
 
     axum::Router::new().nest(
@@ -48,7 +51,7 @@ pub(crate) fn mount(
                         .map(|(_, value)| value.to_string())
                 });
 
-                RouterContext {
+                UnauthenticatedRouterContext {
                     config: config.clone(),
                     db,
                     token,
@@ -59,7 +62,7 @@ pub(crate) fn mount(
     )
 }
 
-fn rspc_mount() -> Arc<Router<RouterContext>> {
+fn rspc_mount() -> Arc<Router<UnauthenticatedRouterContext>> {
     let config = rspc::Config::new()
         .set_ts_bindings_header("/* eslint-disable */")
         .export_ts_bindings(
@@ -67,13 +70,17 @@ fn rspc_mount() -> Arc<Router<RouterContext>> {
                 .join("../client/src/bindings/bindings.ts"),
         );
 
-    rspc::Router::<RouterContext>::new()
+    rspc::Router::<UnauthenticatedRouterContext>::new()
         .config(config)
         .query("ping", |t| t(|_, _: ()| "pong"))
         .middleware(|mw| {
             mw.middleware(|mw| async move {
-                let password = user::Entity::find_by_id(1)
-                    .one(&mw.ctx.db)
+                let user = &mw
+                    .ctx
+                    .db
+                    .user()
+                    .find_unique(user::id::equals(1))
+                    .exec()
                     .await
                     .to_rspc_internal_error("Failed to get user data")?
                     .ok_or_else(|| {
@@ -81,12 +88,18 @@ fn rspc_mount() -> Arc<Router<RouterContext>> {
                             ErrorCode::InternalServerError,
                             "No admin user".to_string(),
                         )
-                    })?
-                    .password;
+                    })?;
+
                 match &mw.ctx.token {
                     Some(token) => {
-                        if token == &password {
-                            Ok(mw)
+                        if *token == user.password {
+                            let new_ctx = RouterContext {
+                                config: mw.ctx.config.clone(),
+                                db: mw.ctx.db.clone(),
+                                user_id: user.id,
+                                scan_status: mw.ctx.scan_status.clone(),
+                            };
+                            Ok(mw.with_ctx(new_ctx))
                         } else {
                             Err(rspc::Error::new(
                                 ErrorCode::Unauthorized,
@@ -95,8 +108,8 @@ fn rspc_mount() -> Arc<Router<RouterContext>> {
                         }
                     }
                     None => Err(rspc::Error::new(
-                        ErrorCode::Unauthorized,
-                        "Unauthorized".into(),
+                        ErrorCode::BadRequest,
+                        "Toke is not specified".into(),
                     )),
                 }
             })

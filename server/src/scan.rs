@@ -1,14 +1,18 @@
 use std::path::PathBuf;
 
-use entity::entities::product;
 use futures::stream::StreamExt;
 use once_cell::sync::Lazy;
 use regex::Regex;
-use sea_orm::{DatabaseConnection, EntityTrait, QuerySelect};
 use tracing::{debug, error, info, warn};
 use walkdir::WalkDir;
 
-use crate::db::product::{create_product, delete_product_and_relations};
+use crate::{
+    db::{
+        product::{delete_product_and_relations, upsert_product},
+        product_read::get_product_ids,
+    },
+    Db,
+};
 
 static DLSITE_FOLDER_REGEX: Lazy<Regex> = Lazy::new(|| regex::Regex::new(r"(?i)RJ\d+").unwrap());
 
@@ -18,11 +22,7 @@ static DLSITE_FOLDER_REGEX: Lazy<Regex> = Lazy::new(|| regex::Regex::new(r"(?i)R
 /// * `folders` - List of folders to scan
 /// * `force` - Force fetch metadata for each RJ folder even if the metadata already exists in db.
 #[tracing::instrument(err)]
-pub async fn scan(
-    folders: &Vec<PathBuf>,
-    force: bool,
-    db: &DatabaseConnection,
-) -> anyhow::Result<()> {
+pub async fn scan(folders: &Vec<PathBuf>, force: bool, db: Db) -> anyhow::Result<()> {
     info!("Starting scan");
     if force {
         info!("Force scan enabled. Data will be overwritten.");
@@ -34,12 +34,7 @@ pub async fn scan(
         .iter()
         .map(|(id, _)| id.to_string())
         .collect::<Vec<_>>();
-    let db_available_ids = product::Entity::find()
-        .select_only()
-        .column(product::Column::Id)
-        .into_tuple()
-        .all(db)
-        .await?;
+    let db_available_ids = get_product_ids(db.clone()).await?;
     debug!("{} products already in db", db_available_ids.len());
 
     let ids_to_fetch = if force {
@@ -87,12 +82,12 @@ pub async fn scan(
 
     debug!("Fetched metadata for {} RJ folders", metadata.len());
 
-    let db_product_update_result = futures::future::join_all(
-        metadata
-            .into_iter()
-            .map(|(product, path)| async move { create_product(db, product, path).await }),
-    )
-    .await;
+    let db_product_update_result =
+        futures::future::join_all(metadata.into_iter().map(|(product, path)| {
+            let db = db.clone();
+            async move { upsert_product(db, product, path).await }
+        }))
+        .await;
 
     let succeed_task_count = db_product_update_result
         .iter()

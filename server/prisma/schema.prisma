@@ -1,0 +1,89 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "cargo prisma"
+  output   = "../src/prisma.rs"
+}
+
+model User {
+  id         Int      @id @default(autoincrement())
+  name       String
+  password   String
+  created_at DateTime @default(now())
+}
+
+enum AgeCategory {
+  General
+  R15
+  Adult
+}
+
+model Product {
+  id           String             @id
+  title        String
+  circle       Circle             @relation(fields: [circleId], references: [id])
+  circleId     String
+  price        Int
+  sale_count   Int
+  age          AgeCategory
+  released_at  DateTime
+  rate_count   Int
+  review_count Int
+  path         String
+  images       String[]
+  description  String?
+  series       String?
+  rating       Float?
+  created_at   DateTime           @default(now())
+  updated_at   DateTime           @updatedAt
+  genres       ProductGenre[]
+  user_genres  ProductUserGenre[]
+  creators     Creator[]
+}
+
+model Circle {
+  id       String    @id
+  name     String
+  products Product[]
+}
+
+model ProductGenre {
+  product   Product @relation(fields: [productId], references: [id])
+  productId String
+  genre     Genre   @relation(fields: [genreId], references: [id])
+  genreId   String
+
+  @@id([productId, genreId])
+}
+
+model ProductUserGenre {
+  product   Product @relation(fields: [productId], references: [id])
+  productId String
+  genre     Genre   @relation(fields: [genreId], references: [id])
+  genreId   String
+  count     Int
+
+  @@id([productId, genreId])
+}
+
+model Genre {
+  id            String             @id
+  name          String
+  products      ProductGenre[]
+  user_products ProductUserGenre[]
+}
+
+enum CreatorRole {
+  VoiceActor
+  Creator
+  Illustrator
+}
+
+model Creator {
+  creator_id String      @id
+  role       CreatorRole
+  product    Product[]
+}

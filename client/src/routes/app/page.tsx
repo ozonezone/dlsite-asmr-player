@@ -1,4 +1,4 @@
-import { ProductResponse, SortOrder, SortType } from "@/bindings/bindings";
+import { ProductDetailed, SortOrder, SortType } from "@/bindings/bindings";
 import { rspc } from "@/state";
 import { Image, NativeSelect, Pagination, Text } from "@mantine/core";
 import { Link } from "react-router-dom";
@@ -65,7 +65,7 @@ export default function Page() {
         ? (
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
             {data[0].map((data) => {
-              return <ItemCard product={data} key={data.product.id} />;
+              return <ItemCard product={data} key={data.id} />;
             })}
           </div>
         )
@@ -87,22 +87,22 @@ export default function Page() {
 }
 
 function ItemCard(
-  { product: { product, circle_name } }: { product: ProductResponse },
+  { product }: { product: ProductDetailed },
 ) {
   return (
     <div className="flex flex-col drop-shadow-md bg-white">
       <Link to={`/app/product/${product.id}`}>
         <Image
-          src={product.image[0]}
+          src={product.images[0]}
           className="pb-1"
         />
-        <Text weight={500}>{product.name}</Text>
+        <Text weight={500}>{product.title}</Text>
       </Link>
 
       <div className="flex flex-wrap text-sm gap-2">
         <AgeBadge age={product.age} />
         <div>{product.released_at}</div>
-        <div>{circle_name}</div>
+        <div>{product.circle.name}</div>
       </div>
     </div>
   );

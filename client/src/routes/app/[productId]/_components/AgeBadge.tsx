@@ -1,14 +1,14 @@
-import { Age } from "@/bindings/bindings";
+import { AgeCategory } from "@/bindings/bindings";
 import { Badge } from "@mantine/core";
 
-export function AgeBadge(props: { age: Age }) {
-  if (props.age === "All") {
+export function AgeBadge(props: { age: AgeCategory }) {
+  if (props.age === "General") {
     return (
       <Badge variant="filled" color="blue">
         全年齢
       </Badge>
     );
-  } else if (props.age === "R") {
+  } else if (props.age === "R15") {
     return (
       <Badge variant="filled" color="orange">
         R指定

@@ -18,7 +18,7 @@ import ImageGallery from "react-image-gallery";
 import "react-image-gallery/styles/css/image-gallery.css";
 import { AgeBadge } from "./_components/AgeBadge";
 import { Skeleton } from "@/components/Skeleton";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useStreamUrl } from "../utils";
 
 export default function Page() {
@@ -80,7 +80,7 @@ function ProductInner(props: { productId: string }) {
   return files && product
     ? (
       <div className="flex flex-col gap-3">
-        <Title order={2}>{product.product.name}</Title>
+        <Title order={2}>{product.title}</Title>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">
           <Tabs defaultValue="local">
             <Tabs.List className="pb-2">
@@ -91,7 +91,7 @@ function ProductInner(props: { productId: string }) {
             <Tabs.Panel value="remote">
               <ImageGallery
                 showPlayButton={false}
-                items={product.product.image.map((url) => {
+                items={product.images.map((url) => {
                   return {
                     original: url,
                     thumbnail: url,
@@ -120,43 +120,43 @@ function ProductInner(props: { productId: string }) {
                   <td>
                     <a
                       className="font-medium text-blue-600 dark:text-blue-500 hover:underline"
-                      href={`https://www.dlsite.com/maniax/work/=/product_id/${product.product.id}.html`}
+                      href={`https://www.dlsite.com/maniax/work/=/product_id/${product.id}.html`}
                       target="_blank"
                       referrerPolicy="no-referrer"
                     >
-                      {product.product.id}
+                      {product.id}
                     </a>
                   </td>
                 </tr>
                 <tr>
                   <td>対象年齢</td>
                   <td>
-                    <AgeBadge age={product.product.age} />
+                    <AgeBadge age={product.age} />
                   </td>
                 </tr>
                 <tr>
                   <td>販売日</td>
-                  <td>{product.product.released_at}</td>
+                  <td>{product.released_at}</td>
                 </tr>
                 <tr>
                   <td>サークル</td>
-                  <td>{product.circle_name}</td>
+                  <td>{product.circle.name}</td>
                 </tr>
                 <tr>
                   <td>シリーズ</td>
-                  <td>{product.product.series ?? "-"}</td>
+                  <td>{product.series ?? "-"}</td>
                 </tr>
                 <tr>
                   <td>声優</td>
-                  <td>{product.product.actor.join(", ")}</td>
+                  <td>{product.creators.join(", ")}</td>
                 </tr>
                 <tr>
                   <td>ジャンル</td>
                   <td className="flex flex-row gap-2 flex-wrap">
-                    {product.genre.map((genre) => {
+                    {product.genres.map((genre) => {
                       return (
-                        <Badge variant="filled" key={genre.id}>
-                          {genre.name}
+                        <Badge variant="filled" key={genre.genreId}>
+                          {genre.genre.name}
                         </Badge>
                       );
                     })}

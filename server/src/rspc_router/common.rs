@@ -1,19 +1,13 @@
-use entity::entities::product;
+use prisma_client_rust::Direction;
 use rspc::Type;
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
+
+use crate::prisma::product;
 
 #[derive(Deserialize, Type)]
 pub enum SortType {
     Name,
     Date,
-}
-impl From<SortType> for product::Column {
-    fn from(sort_type: SortType) -> Self {
-        match sort_type {
-            SortType::Name => product::Column::Name,
-            SortType::Date => product::Column::ReleasedAt,
-        }
-    }
 }
 
 #[derive(Deserialize, Type)]
@@ -21,31 +15,17 @@ pub enum SortOrder {
     Asc,
     Desc,
 }
-impl From<SortOrder> for sea_orm::Order {
-    fn from(sort_order: SortOrder) -> Self {
-        match sort_order {
-            SortOrder::Asc => sea_orm::Order::Asc,
-            SortOrder::Desc => sea_orm::Order::Desc,
-        }
+
+pub fn to_db_sort(
+    sort_type: SortType,
+    sort_order: SortOrder,
+) -> <product::Types as prisma_client_rust::ModelTypes>::OrderBy {
+    let direction = match sort_order {
+        SortOrder::Desc => Direction::Desc,
+        SortOrder::Asc => Direction::Asc,
+    };
+    match sort_type {
+        SortType::Name => product::title::order(direction),
+        SortType::Date => product::released_at::order(direction),
     }
-}
-
-#[derive(Serialize, Type)]
-pub struct Genre {
-    pub id: String,
-    pub name: String,
-}
-#[derive(Serialize, Type)]
-pub struct UserGenre {
-    pub id: String,
-    pub name: String,
-    pub count: i32,
-}
-
-#[derive(Serialize, Type)]
-pub struct ProductResponse {
-    pub product: product::Model,
-    pub genre: Vec<Genre>,
-    pub user_genre: Vec<UserGenre>,
-    pub circle_name: String,
 }

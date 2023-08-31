@@ -1,28 +1,36 @@
 use anyhow::Result;
 use axum::Router;
-use entity::entities::user;
-use migration::{sea_orm::Database, Migrator, MigratorTrait};
-use sea_orm::{ConnectOptions, DatabaseConnection, EntityTrait, Set};
 use std::sync::Arc;
 use tokio::{signal, sync::RwLock};
 use tracing::info;
 
-use crate::config::Config;
+use crate::{config::Config, prisma::user};
+use prisma::PrismaClient;
 
 mod axum_router;
 mod config;
 mod db;
+#[allow(warnings, unused)]
+mod prisma;
 mod rspc_router;
 mod scan;
 
+type Db = Arc<PrismaClient>;
+
 #[derive(Clone)]
 pub(crate) struct AxumRouterState {
-    pub db: DatabaseConnection,
+    pub db: Arc<PrismaClient>,
 }
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    tracing_subscriber::fmt().init();
+    tracing_subscriber::fmt()
+        .event_format(
+            tracing_subscriber::fmt::format()
+                .with_file(true)
+                .with_line_number(true),
+        )
+        .init();
 
     let config = match Config::from_file().await {
         Ok(config) => config,
@@ -39,29 +47,40 @@ async fn main() -> Result<()> {
 
     let config = Arc::new(RwLock::new(config));
 
-    let mut opt = ConnectOptions::new(std::env::var("DATABASE_URL").unwrap());
-    opt.sqlx_logging_level(tracing::log::LevelFilter::Debug);
-    let db = Database::connect(opt).await?;
+    let client = prisma::PrismaClient::_builder()
+        .with_url(std::env::var("DATABASE_URL").unwrap())
+        .build()
+        .await
+        .unwrap();
+
+    #[cfg(debug_assertions)]
+    client._db_push().await.unwrap();
 
     info!("Running database migrations");
-    Migrator::up(&db, None).await?;
+    // Migrator::up(&db, None).await?;
     info!("Database migrations completed");
 
-    if user::Entity::find().one(&db).await?.is_none() {
+    if client
+        .user()
+        .find_unique(user::id::equals(1))
+        .exec()
+        .await?
+        .is_none()
+    {
         info!("Creating default admin user with password 'password'");
-        user::Entity::insert(user::ActiveModel {
-            id: Set(1),
-            password: Set("password".to_string()),
-            name: Set("admin".to_string()),
-        })
-        .exec(&db)
-        .await?;
+        client
+            .user()
+            .create("admin".to_string(), "password".to_string(), vec![])
+            .exec()
+            .await?;
     }
 
+    let client = Arc::new(client);
+
     let app = Router::new()
-        .merge(rspc_router::mount(config.clone(), db.clone()))
-        .merge(axum_router::mount(db.clone()))
-        .with_state(AxumRouterState { db });
+        .merge(rspc_router::mount(config.clone(), client.clone()))
+        .merge(axum_router::mount(client.clone()))
+        .with_state(AxumRouterState { db: client });
 
     let addr = "[::]:14567".parse::<std::net::SocketAddr>().unwrap();
     println!("listening on http://{}/rspc", addr);
