@@ -1,0 +1,3 @@
+[submodule "server/dlsite-rs"]
+	path = server/dlsite-rs
+	url = https://github.com/ozonezone/dlsite-rs
