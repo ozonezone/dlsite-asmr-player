@@ -10,10 +10,10 @@
     "build:copy-asset": "cd server && rm -rf ./assets && cp -r ../client/dist ./assets",
     "build:server": "cd server && cargo build --release",
     "build:docker": "cd server && docker build -t dap:latest .",
-    "db:up": "cd server && docker-compose up -d",
-    "db:down": "cd server && docker-compose down",
+    "db:up": "cd db && dotenv -e ../server/.env -- docker-compose up -d",
+    "db:down": "cd db && dotenv -e ../server/.env -- ddocker-compose down",
     "prisma": "cd server && dotenv -e .env cargo prisma",
-    "db:gen": "cd server && dotenv -e .env cargo prisma generate",
+    "prisma:gen": "cd server && dotenv -e .env cargo prisma generate",
     "dotenv": "dotenv -e ./server/.env --"
   },
   "devDependencies": {

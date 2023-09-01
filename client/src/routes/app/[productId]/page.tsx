@@ -148,7 +148,12 @@ function ProductInner(props: { productId: string }) {
                 </tr>
                 <tr>
                   <td>声優</td>
-                  <td>{product.creators.join(", ")}</td>
+                  <td>
+                    {product.creators.filter((v) => v.role == "VoiceActor").map(
+                      (v) =>
+                        v.creatorName
+                    ).join(", ")}
+                  </td>
                 </tr>
                 <tr>
                   <td>ジャンル</td>

@@ -41,7 +41,7 @@ model Product {
   updated_at   DateTime           @updatedAt
   genres       ProductGenre[]
   user_genres  ProductUserGenre[]
-  creators     Creator[]
+  creators     ProductCreator[]
 }
 
 model Circle {
@@ -80,10 +80,20 @@ enum CreatorRole {
   VoiceActor
   Creator
   Illustrator
+  ScenarioWriter
+}
+
+model ProductCreator {
+  product     Product     @relation(fields: [productId], references: [id])
+  productId   String
+  creator     Creator     @relation(fields: [creatorName], references: [name])
+  creatorName String
+  role        CreatorRole
+
+  @@id([productId, creatorName])
 }
 
 model Creator {
-  creator_id String      @id
-  role       CreatorRole
-  product    Product[]
+  name     String           @id
+  products ProductCreator[]
 }

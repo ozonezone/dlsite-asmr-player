@@ -16,26 +16,26 @@ export type Procedures = {
     subscriptions: never
 };
 
+export type CreatorRole = "VoiceActor" | "Creator" | "Illustrator" | "ScenarioWriter"
+
 export type NewPasswordArgs = { password: string; new_password: string }
 
 export type Config = { scan_dir: string[] }
 
-export type Creator = { creator_id: string; role: CreatorRole }
-
-export type ProductDetailed = { id: string; title: string; circleId: string; price: number; sale_count: number; age: AgeCategory; released_at: string; rate_count: number; review_count: number; path: string; images: string[]; description: string | null; series: string | null; rating: number | null; created_at: string; updated_at: string; circle: Circle; genres: { productId: string; genreId: string; genre: Genre }[]; user_genres: { productId: string; genreId: string; count: number; genre: Genre }[]; creators: Creator[] }
-
-export type Circle = { id: string; name: string }
+export type ProductDetailed = { id: string; title: string; circleId: string; price: number; sale_count: number; age: AgeCategory; released_at: string; rate_count: number; review_count: number; path: string; images: string[]; description: string | null; series: string | null; rating: number | null; created_at: string; updated_at: string; circle: Circle; genres: { productId: string; genreId: string; genre: Genre }[]; user_genres: { productId: string; genreId: string; count: number; genre: Genre }[]; creators: ProductCreator[] }
 
 export type SortOrder = "Asc" | "Desc"
 
-export type CreatorRole = "VoiceActor" | "Creator" | "Illustrator"
+export type Circle = { id: string; name: string }
 
 export type BrowseParams = { sort_type: SortType; sort_order: SortOrder; page: number; limit: number }
 
-export type Genre = { id: string; name: string }
+export type AgeCategory = "General" | "R15" | "Adult"
+
+export type ProductCreator = { productId: string; creatorName: string; role: CreatorRole }
 
 export type User = { id: number; name: string; password: string; created_at: string }
 
 export type SortType = "Name" | "Date"
 
-export type AgeCategory = "General" | "R15" | "Adult"
+export type Genre = { id: string; name: string }

@@ -5,7 +5,7 @@ use dlsite::product::Product;
 use prisma_client_rust::queries::Result;
 
 use crate::{
-    prisma::{circle, genre, product, product_genre, product_user_genre},
+    prisma::{circle, creator, genre, product, product_creator, product_genre, product_user_genre},
     Db,
 };
 
@@ -42,7 +42,7 @@ pub async fn upsert_product(db: Db, product: Product, path: PathBuf) -> Result<(
             product.released_at,
             NaiveTime::from_hms_opt(0, 0, 0).unwrap(),
         ),
-        FixedOffset::east_opt(-9 * 3600).unwrap(),
+        FixedOffset::east_opt(9 * 3600).unwrap(),
     );
     db.product()
         .upsert(
@@ -61,9 +61,7 @@ pub async fn upsert_product(db: Db, product: Product, path: PathBuf) -> Result<(
                 vec![
                     product::series::set(product.series.clone()),
                     product::rating::set(product.rating.map(|r| r.into())),
-                    product::images::set(
-                        product.images.into_iter().map(|u| u.to_string()).collect(),
-                    ),
+                    product::images::set(product.images.iter().map(|u| u.to_string()).collect()),
                 ],
             ),
             vec![
@@ -79,10 +77,50 @@ pub async fn upsert_product(db: Db, product: Product, path: PathBuf) -> Result<(
                 product::path::set(path.to_string_lossy().to_string()),
                 product::series::set(product.series),
                 product::rating::set(product.rating.map(|r| r.into())),
+                product::images::set(product.images.into_iter().map(|u| u.to_string()).collect()),
             ],
         )
         .exec()
         .await?;
+
+    macro_rules! upsert_people {
+        ($key:ident, $role:ident) => {
+            if let Some(v) = product.people.$key {
+                for value in v {
+                    db._batch((
+                        db.creator().upsert(
+                            creator::name::equals(value.clone()),
+                            creator::create(value.clone(), vec![]),
+                            vec![creator::name::set(value.clone())],
+                        ),
+                        db.product_creator().upsert(
+                            product_creator::product_id_creator_name(
+                                product.id.clone(),
+                                value.clone(),
+                            ),
+                            product_creator::create(
+                                product::id::equals(product.id.clone()),
+                                creator::name::equals(value.clone()),
+                                crate::prisma::CreatorRole::$role,
+                                vec![],
+                            ),
+                            vec![
+                                product_creator::product_id::set(product.id.clone()),
+                                product_creator::creator_name::set(value.clone()),
+                                product_creator::role::set(crate::prisma::CreatorRole::$role),
+                            ],
+                        ),
+                    ))
+                    .await?;
+                }
+            }
+        };
+    }
+
+    upsert_people!(author, Creator);
+    upsert_people!(scenario, ScenarioWriter);
+    upsert_people!(illustrator, Illustrator);
+    upsert_people!(voice_actor, VoiceActor);
 
     for genre in product.genre {
         let product_id = product.id.clone();
