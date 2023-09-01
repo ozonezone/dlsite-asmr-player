@@ -14,6 +14,7 @@ mod db;
 mod prisma;
 mod rspc_router;
 mod scan;
+mod search;
 
 type Db = Arc<PrismaClient>;
 

@@ -8,7 +8,8 @@ export type Procedures = {
         { key: "ping_auth", input: never, result: string } | 
         { key: "product.browse", input: BrowseParams, result: [ProductDetailed[], number] } | 
         { key: "product.files", input: string, result: string[][] } | 
-        { key: "product.get", input: string, result: ProductDetailed },
+        { key: "product.get", input: string, result: ProductDetailed } | 
+        { key: "product.search", input: string, result: ProductDetailed[] },
     mutations: 
         { key: "config.setConfig", input: Config, result: string } | 
         { key: "config.setPassword", input: NewPasswordArgs, result: User } | 
@@ -22,13 +23,13 @@ export type NewPasswordArgs = { password: string; new_password: string }
 
 export type Config = { scan_dir: string[] }
 
+export type BrowseParams = { sort_type: SortType; sort_order: SortOrder; page: number; limit: number }
+
 export type ProductDetailed = { id: string; title: string; circleId: string; price: number; sale_count: number; age: AgeCategory; released_at: string; rate_count: number; review_count: number; path: string; images: string[]; description: string | null; series: string | null; rating: number | null; created_at: string; updated_at: string; circle: Circle; genres: { productId: string; genreId: string; genre: Genre }[]; user_genres: { productId: string; genreId: string; count: number; genre: Genre }[]; creators: ProductCreator[] }
 
 export type SortOrder = "Asc" | "Desc"
 
 export type Circle = { id: string; name: string }
-
-export type BrowseParams = { sort_type: SortType; sort_order: SortOrder; page: number; limit: number }
 
 export type AgeCategory = "General" | "R15" | "Adult"
 

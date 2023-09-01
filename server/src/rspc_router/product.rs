@@ -4,7 +4,10 @@ use rspc::Type;
 use serde::Deserialize;
 use tracing::warn;
 
-use crate::db::product_read::{browse, get_product, get_product_folder};
+use crate::{
+    db::product_read::{browse, get_product, get_product_folder},
+    search::search_product,
+};
 
 use super::{
     common::{to_db_sort, SortOrder, SortType},
@@ -52,6 +55,13 @@ pub(crate) fn mount() -> RouterBuilder {
                 let count: i32 = count.try_into().to_rspc_internal_error("Invalid count")?;
 
                 Ok((products, count))
+            })
+        })
+        .query("search", |t| {
+            t(|ctx, query: String| async move {
+                search_product(ctx.db, query)
+                    .await
+                    .to_rspc_internal_error("Error")
             })
         })
         .query("files", |t| {

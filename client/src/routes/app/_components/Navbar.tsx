@@ -19,6 +19,12 @@ export function Navbar() {
         onClick={() => navigate("/app")}
       />
       <NavLink
+        label="Search"
+        icon={<Cog6ToothIcon className="w-4 h-4" />}
+        active={location.pathname === "/app/search"}
+        onClick={() => navigate("/app/search")}
+      />
+      <NavLink
         label="Settings"
         icon={<Cog6ToothIcon className="w-4 h-4" />}
         active={location.pathname === "/app/settings"}

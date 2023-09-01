@@ -71,3 +71,27 @@ pub async fn get_product_ids(db: Db) -> DbResult<Vec<String>> {
 
     Ok(ids)
 }
+
+pub async fn search(
+    db: Db,
+    words: Vec<String>,
+    genres: Vec<String>,
+    circles: Vec<String>,
+    creators: Vec<String>,
+) -> DbResult<Vec<product_detailed::Data>> {
+    // let search_query = words
+    //     .into_iter()
+    //     .map(|word| product::title::contains(word))
+    //     .collect::<Vec<_>>();
+
+    let search_query = vec![
+        product::title::contains("a".to_string()),
+        product::title::contains("b".to_string()),
+    ];
+
+    db.product()
+        .find_many(search_query)
+        .include(product_detailed::include())
+        .exec()
+        .await
+}
