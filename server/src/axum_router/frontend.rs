@@ -6,7 +6,7 @@ use axum::{
 use rust_embed::RustEmbed;
 
 #[derive(RustEmbed)]
-#[folder = "../client/dist/"]
+#[folder = "./assets"]
 struct Assets;
 
 pub(super) async fn static_handler(uri: Uri) -> Result<impl IntoResponse, StatusCode> {

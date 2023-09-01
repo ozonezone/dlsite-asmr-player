@@ -47,18 +47,41 @@ async fn main() -> Result<()> {
 
     let config = Arc::new(RwLock::new(config));
 
-    let client = prisma::PrismaClient::_builder()
-        .with_url(std::env::var("DATABASE_URL").unwrap())
-        .build()
-        .await
-        .unwrap();
+    let mut n = 0;
+    let client = loop {
+        let client = prisma::PrismaClient::_builder()
+            .with_url(std::env::var("DATABASE_URL").expect("No DATABASE_URL environment variable"))
+            .build()
+            .await;
+        n += 1;
+
+        if let Ok(client) = client {
+            break client;
+        }
+
+        info!(
+            "Failed to connect database. Retrying in 5 seconds. (attempt {})",
+            n
+        );
+        tokio::time::sleep(tokio::time::Duration::from_secs(5)).await;
+
+        if n >= 10 {
+            panic!("Failed to connect to database");
+        }
+    };
 
     #[cfg(debug_assertions)]
-    client._db_push().await.unwrap();
+    {
+        info!("db push");
+        client._db_push().await.unwrap();
+    }
 
-    info!("Running database migrations");
-    // Migrator::up(&db, None).await?;
-    info!("Database migrations completed");
+    #[cfg(not(debug_assertions))]
+    {
+        info!("Running database migrations");
+        client._migrate_deploy().await?;
+        info!("Database migrations completed");
+    }
 
     if client
         .user()
