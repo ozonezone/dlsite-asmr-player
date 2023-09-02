@@ -45,7 +45,7 @@ export function LocalSearch(props: {
           })}
         </div>
 
-        <div className="flex flex-row gap-3">
+        <div className="flex flex-row gap-3 justify-center">
           <Pagination
             total={totalPage}
             value={props.page}

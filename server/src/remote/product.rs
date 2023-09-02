@@ -10,6 +10,7 @@ use serde::Deserialize;
 
 use crate::{
     interface::{BrowseQuery, ProductSortOrder},
+    prisma::genre,
     Db,
 };
 
@@ -31,25 +32,49 @@ fn to_dlsite_sort(order: ProductSortOrder, sort: RemoteProductSortType) -> Order
 }
 
 pub async fn search_product(
-    _db: Db,
+    db: Db,
     query: BrowseQuery,
     page: i32,
     limit: i32,
     order: ProductSortOrder,
     sort: RemoteProductSortType,
-) -> Result<SearchResult, dlsite::DlsiteError> {
+) -> Result<SearchResult, anyhow::Error> {
     let client = DlsiteClient::default();
-    client
+
+    let genres = db
+        .genre()
+        .find_many(vec![genre::name::in_vec(query.genres)])
+        .exec()
+        .await?
+        .into_iter()
+        .flat_map(|g| g.id.parse().ok())
+        .collect::<Vec<u32>>();
+
+    let keyword = query
+        .words
+        .into_iter()
+        .chain(query.creators.into_iter())
+        .collect::<Vec<_>>();
+    let keyword = if keyword.is_empty() {
+        None
+    } else {
+        Some(keyword.join("+"))
+    };
+
+    let res = client
         .search_product(&ProductSearchOptions {
-            keyword: if query.words.is_empty() {
+            keyword,
+            genre: if genres.is_empty() {
                 None
             } else {
-                Some(query.words.join("+"))
+                Some(genres)
             },
+            age_category: query.age_category.map(|c| vec![c]),
             page: Some(page as u32),
             per_page: Some(limit as u32),
             order: Some(to_dlsite_sort(order, sort)),
             ..Default::default()
         })
-        .await
+        .await?;
+    Ok(res)
 }

@@ -183,6 +183,7 @@ function ProductInner(props: { productId: string }) {
                     {product.genres.map((genre) => {
                       return (
                         <RouterLink
+                          key={genre.genre.name}
                           to={"/app?q=genre:" + genre.genre.name}
                         >
                           <Badge variant="filled" key={genre.genreId}>

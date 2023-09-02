@@ -22,6 +22,8 @@ export function RemoteSearch(props: {
   }]);
   const totalPage = data ? (data.count / props.limit + 1) : null;
 
+  console.log(data?.query_path);
+
   return data && totalPage && !isRefetching
     ? (
       <div className="flex flex-col gap-2 pt-2">

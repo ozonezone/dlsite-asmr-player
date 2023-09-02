@@ -33,3 +33,13 @@ impl From<dlsite::interface::AgeCategory> for crate::prisma::AgeCategory {
         }
     }
 }
+// Inverse impl
+impl From<crate::prisma::AgeCategory> for dlsite::interface::AgeCategory {
+    fn from(value: crate::prisma::AgeCategory) -> Self {
+        match value {
+            crate::prisma::AgeCategory::General => Self::General,
+            crate::prisma::AgeCategory::R15 => Self::R15,
+            crate::prisma::AgeCategory::Adult => Self::Adult,
+        }
+    }
+}

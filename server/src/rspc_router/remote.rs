@@ -39,6 +39,7 @@ pub struct RemoteSearchResponseItem {
 pub struct RemoteSearchResponse {
     pub products: Vec<RemoteSearchResponseItem>,
     pub count: i32,
+    pub query_path: String,
 }
 
 pub(crate) fn mount() -> RouterBuilder {
@@ -82,6 +83,7 @@ pub(crate) fn mount() -> RouterBuilder {
                     })
                     .collect(),
                 count: res.count,
+                query_path: res.query_path,
             })
         })
     })
