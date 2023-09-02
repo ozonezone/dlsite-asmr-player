@@ -1,4 +1,3 @@
-import { SortOrder, SortType } from "@/bindings/bindings";
 import { rspc } from "@/state";
 import { Button, NativeSelect, Pagination, TextInput } from "@mantine/core";
 import { Skeleton } from "@/components/Skeleton";
@@ -11,6 +10,7 @@ import {
 } from "use-query-params";
 import { ItemCard } from "@/components/ItemCard";
 import { useState } from "react";
+import { ProductSortOrder, ProductSortType } from "@/bindings/bindings";
 
 const PageParam = withDefault(NumberParam, 1);
 const SortOrderParam = withDefault(createEnumParam(["Desc", "Asc"]), "Desc");
@@ -28,8 +28,8 @@ export default function Page() {
   const { data } = rspc.useQuery(["product.browse", {
     limit,
     page: page,
-    sort_type: sortType as SortType,
-    sort_order: sortOrder as SortOrder,
+    sort_type: sortType as ProductSortType,
+    sort_order: sortOrder as ProductSortOrder,
     query: query ?? "",
   }]);
   const totalPage = data ? (data[1] / limit + 1) : null;

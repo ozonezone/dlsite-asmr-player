@@ -2,7 +2,7 @@
 CREATE TYPE "AgeCategory" AS ENUM ('General', 'R15', 'Adult');
 
 -- CreateEnum
-CREATE TYPE "CreatorRole" AS ENUM ('VoiceActor', 'Creator', 'Illustrator');
+CREATE TYPE "CreatorRole" AS ENUM ('VoiceActor', 'Creator', 'Illustrator', 'ScenarioWriter');
 
 -- CreateTable
 CREATE TABLE "User" (
@@ -70,24 +70,20 @@ CREATE TABLE "Genre" (
 );
 
 -- CreateTable
-CREATE TABLE "Creator" (
-    "creator_id" TEXT NOT NULL,
+CREATE TABLE "ProductCreator" (
+    "productId" TEXT NOT NULL,
+    "creatorName" TEXT NOT NULL,
     "role" "CreatorRole" NOT NULL,
 
-    CONSTRAINT "Creator_pkey" PRIMARY KEY ("creator_id")
+    CONSTRAINT "ProductCreator_pkey" PRIMARY KEY ("productId","creatorName")
 );
 
 -- CreateTable
-CREATE TABLE "_CreatorToProduct" (
-    "A" TEXT NOT NULL,
-    "B" TEXT NOT NULL
+CREATE TABLE "Creator" (
+    "name" TEXT NOT NULL,
+
+    CONSTRAINT "Creator_pkey" PRIMARY KEY ("name")
 );
-
--- CreateIndex
-CREATE UNIQUE INDEX "_CreatorToProduct_AB_unique" ON "_CreatorToProduct"("A", "B");
-
--- CreateIndex
-CREATE INDEX "_CreatorToProduct_B_index" ON "_CreatorToProduct"("B");
 
 -- AddForeignKey
 ALTER TABLE "Product" ADD CONSTRAINT "Product_circleId_fkey" FOREIGN KEY ("circleId") REFERENCES "Circle"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
@@ -105,7 +101,7 @@ ALTER TABLE "ProductUserGenre" ADD CONSTRAINT "ProductUserGenre_productId_fkey" 
 ALTER TABLE "ProductUserGenre" ADD CONSTRAINT "ProductUserGenre_genreId_fkey" FOREIGN KEY ("genreId") REFERENCES "Genre"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "_CreatorToProduct" ADD CONSTRAINT "_CreatorToProduct_A_fkey" FOREIGN KEY ("A") REFERENCES "Creator"("creator_id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "ProductCreator" ADD CONSTRAINT "ProductCreator_productId_fkey" FOREIGN KEY ("productId") REFERENCES "Product"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "_CreatorToProduct" ADD CONSTRAINT "_CreatorToProduct_B_fkey" FOREIGN KEY ("B") REFERENCES "Product"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "ProductCreator" ADD CONSTRAINT "ProductCreator_creatorName_fkey" FOREIGN KEY ("creatorName") REFERENCES "Creator"("name") ON DELETE RESTRICT ON UPDATE CASCADE;
