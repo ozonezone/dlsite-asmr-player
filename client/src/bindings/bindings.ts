@@ -13,7 +13,7 @@ export type Procedures = {
     mutations: 
         { key: "config.setConfig", input: Config, result: string } | 
         { key: "config.setPassword", input: NewPasswordArgs, result: User } | 
-        { key: "scan.start", input: boolean, result: null },
+        { key: "scan.start", input: boolean, result: number },
     subscriptions: never
 };
 
@@ -25,8 +25,6 @@ export type Config = { scan_dir: string[] }
 
 export type BrowseParams = { sort_type: SortType; sort_order: SortOrder; page: number; limit: number }
 
-export type ProductDetailed = { id: string; title: string; circleId: string; price: number; sale_count: number; age: AgeCategory; released_at: string; rate_count: number; review_count: number; path: string; images: string[]; description: string | null; series: string | null; rating: number | null; created_at: string; updated_at: string; circle: Circle; genres: { productId: string; genreId: string; genre: Genre }[]; user_genres: { productId: string; genreId: string; count: number; genre: Genre }[]; creators: ProductCreator[] }
-
 export type SortOrder = "Asc" | "Desc"
 
 export type Circle = { id: string; name: string }
@@ -36,6 +34,8 @@ export type AgeCategory = "General" | "R15" | "Adult"
 export type ProductCreator = { productId: string; creatorName: string; role: CreatorRole }
 
 export type User = { id: number; name: string; password: string; created_at: string }
+
+export type ProductDetailed = { id: string; title: string; circleId: string; price: number; sale_count: number; age: AgeCategory; released_at: string; rate_count: number; review_count: number; path: string; images: string[]; description: string | null; series: string | null; rating: number | null; created_at: string; updated_at: string; circle: Circle; genres: { productId: string; genreId: string; genre: Genre }[]; user_genres: { productId: string; genreId: string; count: number; genre: Genre }[]; creators: ProductCreator[] }
 
 export type SortType = "Name" | "Date"
 

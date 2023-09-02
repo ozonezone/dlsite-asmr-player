@@ -1,7 +1,7 @@
 import { rspc } from "@/state";
 import { DocumentIcon, PhotoIcon, PlayIcon } from "@heroicons/react/24/solid";
 import { useSetAtom } from "jotai";
-import { useParams } from "react-router-dom";
+import { Link as RouterLink, useParams } from "react-router-dom";
 import { playerDataAtom } from "../state";
 import { isAudioFile, isImageFile } from "@/const";
 import {
@@ -20,6 +20,7 @@ import { AgeBadge } from "./_components/AgeBadge";
 import { Skeleton } from "@/components/Skeleton";
 import { useState } from "react";
 import { useStreamUrl } from "../utils";
+import { Link } from "@/components/Link";
 
 export default function Page() {
   const { productId } = useParams();
@@ -82,10 +83,15 @@ function ProductInner(props: { productId: string }) {
       <div className="flex flex-col gap-3">
         <Title order={2}>{product.title}</Title>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">
-          <Tabs defaultValue="local">
+          <Tabs
+            defaultValue={imageFiles.length == 0 ? "remote" : "local"}
+            className="bg-white px-3"
+          >
             <Tabs.List className="pb-2">
               <Tabs.Tab value="remote">DLSite</Tabs.Tab>
-              <Tabs.Tab value="local">Local</Tabs.Tab>
+              <Tabs.Tab value="local" disabled={imageFiles.length == 0}>
+                Local
+              </Tabs.Tab>
             </Tabs.List>
 
             <Tabs.Panel value="remote">
@@ -131,7 +137,9 @@ function ProductInner(props: { productId: string }) {
                 <tr>
                   <td>対象年齢</td>
                   <td>
-                    <AgeBadge age={product.age} />
+                    <Link to={"/app/search?q=age:" + product.age}>
+                      <AgeBadge age={product.age} />
+                    </Link>
                   </td>
                 </tr>
                 <tr>
@@ -140,7 +148,11 @@ function ProductInner(props: { productId: string }) {
                 </tr>
                 <tr>
                   <td>サークル</td>
-                  <td>{product.circle.name}</td>
+                  <td>
+                    <Link to={"/app/search?q=circle:" + product.circle.name}>
+                      {product.circle.name}
+                    </Link>
+                  </td>
                 </tr>
                 <tr>
                   <td>シリーズ</td>
@@ -150,9 +162,16 @@ function ProductInner(props: { productId: string }) {
                   <td>声優</td>
                   <td>
                     {product.creators.filter((v) => v.role == "VoiceActor").map(
-                      (v) =>
-                        v.creatorName
-                    ).join(", ")}
+                      (v) => (
+                        <Link
+                          key={v.creatorName}
+                          className="mr-2"
+                          to={"/app/search?q=creator:" + v.creatorName}
+                        >
+                          {v.creatorName}
+                        </Link>
+                      ),
+                    )}
                   </td>
                 </tr>
                 <tr>
@@ -160,9 +179,13 @@ function ProductInner(props: { productId: string }) {
                   <td className="flex flex-row gap-2 flex-wrap">
                     {product.genres.map((genre) => {
                       return (
-                        <Badge variant="filled" key={genre.genreId}>
-                          {genre.genre.name}
-                        </Badge>
+                        <RouterLink
+                          to={"/app/search?q=genre:" + genre.genre.name}
+                        >
+                          <Badge variant="filled" key={genre.genreId}>
+                            {genre.genre.name}
+                          </Badge>
+                        </RouterLink>
                       );
                     })}
                   </td>

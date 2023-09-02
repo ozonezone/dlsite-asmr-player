@@ -47,6 +47,9 @@ importers:
       '@types/react-image-gallery':
         specifier: ^1.2.0
         version: 1.2.0
+      clsx:
+        specifier: ^2.0.0
+        version: 2.0.0
       jotai:
         specifier: ^2.4.0
         version: 2.4.0(@types/react@18.2.21)(react@18.2.0)
@@ -2553,6 +2556,11 @@ packages:
 
   /clsx@1.1.1:
     resolution: {integrity: sha512-6/bPho624p3S2pMyvP5kKBPXnI3ufHLObBFCfgx+LkeR5lg2XYy2hqZqUf45ypD8COn2bhgGJSUE+l5dhNBieA==}
+    engines: {node: '>=6'}
+    dev: false
+
+  /clsx@2.0.0:
+    resolution: {integrity: sha512-rQ1+kcj+ttHG0MKVGBUXwayCCF1oh39BF5COIpRzuCEv8Mwjv0XucrI2ExNTOn9IlLifGClWQcU9BrZORvtw6Q==}
     engines: {node: '>=6'}
     dev: false
 

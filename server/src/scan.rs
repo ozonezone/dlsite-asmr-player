@@ -22,7 +22,7 @@ static DLSITE_FOLDER_REGEX: Lazy<Regex> = Lazy::new(|| regex::Regex::new(r"(?i)R
 /// * `folders` - List of folders to scan
 /// * `force` - Force fetch metadata for each RJ folder even if the metadata already exists in db.
 #[tracing::instrument(err)]
-pub async fn scan(folders: &Vec<PathBuf>, force: bool, db: Db) -> anyhow::Result<()> {
+pub async fn scan(folders: &Vec<PathBuf>, force: bool, db: Db) -> anyhow::Result<i64> {
     info!("Starting scan");
     if force {
         info!("Force scan enabled. Data will be overwritten.");
@@ -112,7 +112,7 @@ pub async fn scan(folders: &Vec<PathBuf>, force: bool, db: Db) -> anyhow::Result
         })
         .collect::<Vec<_>>();
 
-    delete_product_and_relations(db, &product_ids_to_delete)
+    let count = delete_product_and_relations(db, &product_ids_to_delete)
         .await
         .map_err(|e| {
             error!("Failed to delete products and relations: {}", e);
@@ -122,7 +122,7 @@ pub async fn scan(folders: &Vec<PathBuf>, force: bool, db: Db) -> anyhow::Result
     info!("Deleted {} products from db", product_ids_to_delete.len());
     info!("Scan finished");
 
-    Ok(())
+    Ok(count)
 }
 
 async fn scan_rj_folder(paths: &Vec<PathBuf>) -> Vec<(String, PathBuf)> {

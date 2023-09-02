@@ -185,12 +185,30 @@ pub async fn delete_product_and_relations(db: Db, ids: &Vec<String>) -> Result<i
     if ids.is_empty() {
         return Ok(0);
     }
-    db.product()
-        .delete_many(
-            ids.iter()
-                .map(|id| product::id::equals(id.clone()))
-                .collect::<Vec<_>>(),
-        )
-        .exec()
-        .await
+    let res = db
+        ._batch((
+            db.product_creator().delete_many(
+                ids.iter()
+                    .map(|id| product_creator::product_id::equals(id.clone()))
+                    .collect(),
+            ),
+            db.product_genre().delete_many(
+                ids.iter()
+                    .map(|id| product_genre::product_id::equals(id.clone()))
+                    .collect(),
+            ),
+            db.product_user_genre().delete_many(
+                ids.iter()
+                    .map(|id| product_user_genre::product_id::equals(id.clone()))
+                    .collect(),
+            ),
+            db.product().delete_many(
+                ids.iter()
+                    .map(|id| product::id::equals(id.clone()))
+                    .collect::<Vec<_>>(),
+            ),
+        ))
+        .await?;
+
+    Ok(res.3)
 }

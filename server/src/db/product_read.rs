@@ -1,6 +1,10 @@
-use prisma_client_rust::queries::Result as DbResult;
+use dlsite::interface::AgeCategory;
+use prisma_client_rust::{and, operator::or, or, queries::Result as DbResult};
 
-use crate::{prisma::product, Db};
+use crate::{
+    prisma::{circle, creator, genre, product, product_creator, product_genre},
+    Db,
+};
 
 product::include!(product_detailed {
     circle
@@ -78,17 +82,36 @@ pub async fn search(
     genres: Vec<String>,
     circles: Vec<String>,
     creators: Vec<String>,
+    age_category: Option<AgeCategory>,
 ) -> DbResult<Vec<product_detailed::Data>> {
-    // let search_query = words
-    //     .into_iter()
-    //     .map(|word| product::title::contains(word))
-    //     .collect::<Vec<_>>();
+    dbg!(&words, &genres, &circles, &creators);
 
-    let search_query = vec![
-        product::title::contains("a".to_string()),
-        product::title::contains("b".to_string()),
-    ];
-
+    // TODO: Make and search works
+    let search_query = words
+        .into_iter()
+        .map(|word| product::title::contains(word))
+        .chain(genres.into_iter().map(|genre| {
+            product::genres::some(vec![product_genre::genre::is(vec![genre::name::equals(
+                genre,
+            )])])
+        }))
+        .chain(
+            circles
+                .into_iter()
+                .map(|circle| product::circle::is(vec![circle::name::equals(circle)])),
+        )
+        .chain(creators.into_iter().map(|creator| {
+            product::creators::some(vec![product_creator::creator::is(vec![
+                creator::name::equals(creator),
+            ])])
+        }))
+        .chain(
+            std::iter::once(
+                age_category.map(|age_category| product::age::equals(age_category.into())),
+            )
+            .flatten(),
+        )
+        .collect::<Vec<_>>();
     db.product()
         .find_many(search_query)
         .include(product_detailed::include())
