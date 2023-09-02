@@ -1,10 +1,10 @@
 import { Link } from "react-router-dom";
-import { SearchResult } from "@/bindings/bindings";
+import { RemoteSearchResponseItem } from "@/bindings/bindings";
 import { Image, Text } from "@mantine/core";
 import { AgeBadge } from "@/routes/app/[productId]/_components/AgeBadge";
 
 export function RemoteItemCard(
-  { product }: { product: SearchResult },
+  { product }: { product: RemoteSearchResponseItem },
 ) {
   return (
     <div className="flex flex-col drop-shadow-md bg-white">
