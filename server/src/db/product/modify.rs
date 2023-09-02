@@ -9,16 +9,6 @@ use crate::{
     Db,
 };
 
-impl From<dlsite::interface::AgeCategory> for crate::prisma::AgeCategory {
-    fn from(value: dlsite::interface::AgeCategory) -> Self {
-        match value {
-            dlsite::interface::AgeCategory::General => Self::General,
-            dlsite::interface::AgeCategory::R15 => Self::R15,
-            dlsite::interface::AgeCategory::Adult => Self::Adult,
-        }
-    }
-}
-
 #[tracing::instrument(err, skip_all)]
 pub async fn upsert_product(db: Db, product: Product, path: PathBuf) -> Result<()> {
     db.circle()

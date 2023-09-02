@@ -1,5 +1,5 @@
 import { RouteObject } from "react-router-dom";
-import { default as AppPage } from "./page";
+import { default as AppPage } from "./(home)/page";
 import { default as AppLayout } from "./layout";
 import { default as ProductPage } from "./[productId]/page";
 import { default as SettingsPage } from "./settings/page";

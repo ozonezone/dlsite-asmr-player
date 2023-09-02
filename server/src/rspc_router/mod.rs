@@ -12,6 +12,7 @@ use self::utils::ToRspcInternalError;
 
 mod config;
 mod product;
+mod remote;
 mod scan;
 mod utils;
 
@@ -117,6 +118,7 @@ fn rspc_mount() -> Arc<Router<UnauthenticatedRouterContext>> {
         .merge("config.", config::mount())
         .merge("scan.", scan::mount())
         .merge("product.", product::mount())
+        .merge("remote.", remote::mount())
         .build()
         .arced()
 }

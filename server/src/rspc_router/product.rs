@@ -5,8 +5,11 @@ use serde::Deserialize;
 use tracing::warn;
 
 use crate::{
-    browse::browse_product,
-    db::product::read::{get_product, get_product_folder},
+    browse::parse_query,
+    db::product::{
+        read::{get_product, get_product_folder},
+        read_browse::browse,
+    },
     interface::{ProductSortOrder, ProductSortType},
 };
 
@@ -38,9 +41,10 @@ pub(crate) fn mount() -> RouterBuilder {
         })
         .query("browse", |t| {
             t(|ctx, params: BrowseParams| async move {
-                let (products, count) = browse_product(
+                let query = parse_query(params.query);
+                let (products, count) = browse(
                     ctx.db,
-                    params.query,
+                    query,
                     params
                         .page
                         .try_into()

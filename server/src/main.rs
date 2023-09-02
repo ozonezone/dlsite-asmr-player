@@ -14,6 +14,7 @@ mod db;
 mod interface;
 #[allow(warnings, unused)]
 mod prisma;
+mod remote;
 mod rspc_router;
 mod scan;
 

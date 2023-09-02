@@ -1,8 +1,7 @@
-use dlsite::interface::AgeCategory;
-use prisma_client_rust::{or, queries::Result as DbResult, Direction};
+use prisma_client_rust::{queries::Result as DbResult, Direction};
 
 use crate::{
-    interface::{ProductSortOrder, ProductSortType},
+    interface::{BrowseQuery, ProductSortOrder, ProductSortType},
     prisma::{circle, creator, genre, product, product_creator, product_genre},
     Db,
 };
@@ -22,15 +21,6 @@ fn to_db_sort(
         ProductSortType::ReleasedAt => product::released_at::order(direction),
         ProductSortType::CreatedAt => product::created_at::order(direction),
     }
-}
-
-#[derive(Debug)]
-pub struct BrowseQuery {
-    pub words: Vec<String>,
-    pub genres: Vec<String>,
-    pub circles: Vec<String>,
-    pub creators: Vec<String>,
-    pub age_category: Option<AgeCategory>,
 }
 
 pub async fn browse(

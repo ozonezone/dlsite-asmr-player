@@ -1,27 +1,12 @@
 use dlsite::interface::AgeCategory;
-use prisma_client_rust::Result;
 
-use crate::{
-    db::product::{
-        product_detailed,
-        read_browse::{browse, BrowseQuery},
-    },
-    interface::{ProductSortOrder, ProductSortType},
-    Db,
-};
+use crate::interface::BrowseQuery;
 
 fn process_value(s: &str) -> String {
-    s.replace("_", " ")
+    s.replace('_', " ")
 }
 
-pub async fn browse_product(
-    db: Db,
-    query: String,
-    page: i32,
-    limit: i32,
-    order: ProductSortOrder,
-    sort: ProductSortType,
-) -> Result<(Vec<product_detailed::Data>, i64)> {
+pub fn parse_query(query: String) -> BrowseQuery {
     let mut words = vec![];
     let mut genres = vec![];
     let mut circles = vec![];
@@ -50,19 +35,11 @@ pub async fn browse_product(
         };
     });
 
-    browse(
-        db,
-        BrowseQuery {
-            words,
-            genres,
-            circles,
-            creators,
-            age_category,
-        },
-        page,
-        limit,
-        order,
-        sort,
-    )
-    .await
+    BrowseQuery {
+        words,
+        genres,
+        circles,
+        creators,
+        age_category,
+    }
 }
