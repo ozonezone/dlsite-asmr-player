@@ -2,11 +2,26 @@ use dlsite::interface::AgeCategory;
 use prisma_client_rust::Result;
 
 use crate::{
-    db::product_read::{product_detailed, search},
+    db::product::{
+        product_detailed,
+        read_browse::{browse, BrowseQuery},
+    },
+    interface::{ProductSortOrder, ProductSortType},
     Db,
 };
 
-pub async fn search_product(db: Db, query: String) -> Result<Vec<product_detailed::Data>> {
+fn process_value(s: &str) -> String {
+    s.replace("_", " ")
+}
+
+pub async fn browse_product(
+    db: Db,
+    query: String,
+    page: i32,
+    limit: i32,
+    order: ProductSortOrder,
+    sort: ProductSortType,
+) -> Result<(Vec<product_detailed::Data>, i64)> {
     let mut words = vec![];
     let mut genres = vec![];
     let mut circles = vec![];
@@ -16,9 +31,9 @@ pub async fn search_product(db: Db, query: String) -> Result<Vec<product_detaile
     query.split_whitespace().for_each(|keyword| {
         if let Some((k, v)) = keyword.split_once(':') {
             match k {
-                "genre" => genres.push(v.to_string()),
-                "circle" => circles.push(v.to_string()),
-                "creator" => creators.push(v.to_string()),
+                "genre" => genres.push(process_value(v)),
+                "circle" => circles.push(process_value(v)),
+                "creator" => creators.push(process_value(v)),
                 "age" => match &*v.to_lowercase() {
                     "r15" => age_category = Some(AgeCategory::R15),
                     "r-15" => age_category = Some(AgeCategory::R15),
@@ -35,5 +50,19 @@ pub async fn search_product(db: Db, query: String) -> Result<Vec<product_detaile
         };
     });
 
-    search(db, words, genres, circles, creators, age_category).await
+    browse(
+        db,
+        BrowseQuery {
+            words,
+            genres,
+            circles,
+            creators,
+            age_category,
+        },
+        page,
+        limit,
+        order,
+        sort,
+    )
+    .await
 }

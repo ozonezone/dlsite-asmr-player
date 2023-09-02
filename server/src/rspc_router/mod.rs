@@ -10,7 +10,6 @@ use crate::{AxumRouterState, Db};
 
 use self::utils::ToRspcInternalError;
 
-mod common;
 mod config;
 mod product;
 mod scan;

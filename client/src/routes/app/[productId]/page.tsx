@@ -137,7 +137,7 @@ function ProductInner(props: { productId: string }) {
                 <tr>
                   <td>対象年齢</td>
                   <td>
-                    <Link to={"/app/search?q=age:" + product.age}>
+                    <Link to={"/app?q=age:" + product.age}>
                       <AgeBadge age={product.age} />
                     </Link>
                   </td>
@@ -149,7 +149,10 @@ function ProductInner(props: { productId: string }) {
                 <tr>
                   <td>サークル</td>
                   <td>
-                    <Link to={"/app/search?q=circle:" + product.circle.name}>
+                    <Link
+                      to={"/app?q=circle:" +
+                        product.circle.name.replaceAll(" ", "_")}
+                    >
                       {product.circle.name}
                     </Link>
                   </td>
@@ -166,7 +169,7 @@ function ProductInner(props: { productId: string }) {
                         <Link
                           key={v.creatorName}
                           className="mr-2"
-                          to={"/app/search?q=creator:" + v.creatorName}
+                          to={"/app?q=creator:" + v.creatorName}
                         >
                           {v.creatorName}
                         </Link>
@@ -180,7 +183,7 @@ function ProductInner(props: { productId: string }) {
                     {product.genres.map((genre) => {
                       return (
                         <RouterLink
-                          to={"/app/search?q=genre:" + genre.genre.name}
+                          to={"/app?q=genre:" + genre.genre.name}
                         >
                           <Badge variant="filled" key={genre.genreId}>
                             {genre.genre.name}

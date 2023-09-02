@@ -4,7 +4,6 @@ import { default as AppLayout } from "./layout";
 import { default as ProductPage } from "./[productId]/page";
 import { default as SettingsPage } from "./settings/page";
 import { default as ScanPage } from "./scan/page";
-import { default as SearchPage } from "./search/page";
 import Protected from "./_components/Protected";
 import { QueryParamProvider } from "use-query-params";
 import { ReactRouter6Adapter } from "use-query-params/adapters/react-router-6";
@@ -28,10 +27,6 @@ export const router: RouteObject = {
     {
       path: "/app/settings",
       element: <SettingsPage />,
-    },
-    {
-      path: "/app/search",
-      element: <SearchPage />,
     },
     {
       path: "/app/scan",

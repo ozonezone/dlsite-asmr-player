@@ -7,9 +7,9 @@ use tracing::{debug, error, info, warn};
 use walkdir::WalkDir;
 
 use crate::{
-    db::{
-        product::{delete_product_and_relations, upsert_product},
-        product_read::get_product_ids,
+    db::product::{
+        modify::{delete_product_and_relations, upsert_product},
+        read::get_product_ids,
     },
     Db,
 };

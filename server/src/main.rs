@@ -8,13 +8,14 @@ use crate::{config::Config, prisma::user};
 use prisma::PrismaClient;
 
 mod axum_router;
+mod browse;
 mod config;
 mod db;
+mod interface;
 #[allow(warnings, unused)]
 mod prisma;
 mod rspc_router;
 mod scan;
-mod search;
 
 type Db = Arc<PrismaClient>;
 

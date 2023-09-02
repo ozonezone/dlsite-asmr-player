@@ -5,22 +5,23 @@ use serde::Deserialize;
 use tracing::warn;
 
 use crate::{
-    db::product_read::{browse, get_product, get_product_folder},
-    search::search_product,
+    browse::browse_product,
+    db::product::read::{get_product, get_product_folder},
+    interface::{ProductSortOrder, ProductSortType},
 };
 
 use super::{
-    common::{to_db_sort, SortOrder, SortType},
     utils::{ToRspcInternalError, ToRspcNotFound},
     RouterBuilder,
 };
 
 #[derive(Deserialize, Type)]
 pub struct BrowseParams {
-    sort_type: SortType,
-    sort_order: SortOrder,
+    sort_type: ProductSortType,
+    sort_order: ProductSortOrder,
     page: u32,
     limit: u32,
+    query: String,
 }
 
 pub(crate) fn mount() -> RouterBuilder {
@@ -37,8 +38,9 @@ pub(crate) fn mount() -> RouterBuilder {
         })
         .query("browse", |t| {
             t(|ctx, params: BrowseParams| async move {
-                let (products, count) = browse(
+                let (products, count) = browse_product(
                     ctx.db,
+                    params.query,
                     params
                         .page
                         .try_into()
@@ -47,7 +49,8 @@ pub(crate) fn mount() -> RouterBuilder {
                         .limit
                         .try_into()
                         .to_rspc_internal_error("Invalid limit")?,
-                    to_db_sort(params.sort_type, params.sort_order),
+                    params.sort_order,
+                    params.sort_type,
                 )
                 .await
                 .to_rspc_internal_error("Error")?;
@@ -55,13 +58,6 @@ pub(crate) fn mount() -> RouterBuilder {
                 let count: i32 = count.try_into().to_rspc_internal_error("Invalid count")?;
 
                 Ok((products, count))
-            })
-        })
-        .query("search", |t| {
-            t(|ctx, query: String| async move {
-                search_product(ctx.db, query)
-                    .await
-                    .to_rspc_internal_error("Error")
             })
         })
         .query("files", |t| {
