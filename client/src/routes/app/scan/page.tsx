@@ -31,6 +31,7 @@ export default function Page() {
             title: "Info",
             message: "Scan finished",
           });
+          queryClient.clear();
         }}
       >
         {isLoading ? <Loader size="sm" /> : "Start scan"}
@@ -45,6 +46,7 @@ export default function Page() {
             title: "Info",
             message: "Force scan finished",
           });
+          queryClient.clear();
         }}
       >
         {isLoading ? <Loader size="sm" /> : "Force scan"}

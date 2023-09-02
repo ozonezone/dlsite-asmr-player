@@ -1,5 +1,11 @@
 import { rspc } from "@/state";
-import { Button, NativeSelect, Pagination, TextInput } from "@mantine/core";
+import {
+  ActionIcon,
+  Button,
+  NativeSelect,
+  Pagination,
+  TextInput,
+} from "@mantine/core";
 import { Skeleton } from "@/components/Skeleton";
 import {
   createEnumParam,
@@ -11,10 +17,16 @@ import {
 import { ItemCard } from "@/components/ItemCard";
 import { useState } from "react";
 import { ProductSortOrder, ProductSortType } from "@/bindings/bindings";
+import { ArrowPathIcon } from "@heroicons/react/24/solid";
+
+const sortTypeEnum = ["CreatedAt", "Name", "ReleasedAt"];
 
 const PageParam = withDefault(NumberParam, 1);
 const SortOrderParam = withDefault(createEnumParam(["Desc", "Asc"]), "Desc");
-const SortTypeParam = withDefault(createEnumParam(["Date", "Name"]), "Date");
+const SortTypeParam = withDefault(
+  createEnumParam(sortTypeEnum),
+  "ReleasedAt",
+);
 
 export default function Page() {
   const [page, setPage] = useQueryParam("page", PageParam);
@@ -25,7 +37,7 @@ export default function Page() {
 
   const limit = 50;
 
-  const { data } = rspc.useQuery(["product.browse", {
+  const { data, refetch, isRefetching } = rspc.useQuery(["product.browse", {
     limit,
     page: page,
     sort_type: sortType as ProductSortType,
@@ -48,10 +60,10 @@ export default function Page() {
           }}
         />
         <NativeSelect
-          data={["Date", "Name"]}
+          data={sortTypeEnum}
           value={sortType}
           onChange={(e) => {
-            setSortType(e.currentTarget.value as "Date" | "Name");
+            setSortType(e.currentTarget.value);
           }}
         />
         <NativeSelect
@@ -70,39 +82,41 @@ export default function Page() {
           Search
         </Button>
       </form>
-      {totalPage
+      {data && totalPage && !isRefetching
         ? (
-          <div className="flex flex-row gap-3">
-            <Pagination
-              total={totalPage}
-              value={page}
-              onChange={(e) => setPage(e)}
-            />
-            {data ? <div>{data[0].length} / {data[1]} items</div> : null}
-          </div>
-        )
-        : null}
-      {data
-        ? (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
-            {data[0].map((data) => {
-              return <ItemCard product={data} key={data.id} />;
-            })}
-          </div>
+          <>
+            <div className="flex flex-row gap-3 w-full items-center justify-center">
+              <Pagination
+                total={totalPage}
+                value={page}
+                onChange={(e) => setPage(e)}
+              />
+              <div>{data[0].length} / {data[1]} items</div>
+              <ActionIcon
+                onClick={() => {
+                  refetch();
+                }}
+              >
+                <ArrowPathIcon />
+              </ActionIcon>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
+              {data[0].map((data) => {
+                return <ItemCard product={data} key={data.id} />;
+              })}
+            </div>
+
+            <div className="flex flex-row gap-3">
+              <Pagination
+                total={totalPage}
+                value={page}
+                onChange={(e) => setPage(e)}
+              />
+              {data ? <div>{data[1]} items</div> : null}
+            </div>
+          </>
         )
         : <Skeleton />}
-      {totalPage && data
-        ? (
-          <div className="flex flex-row gap-3">
-            <Pagination
-              total={totalPage}
-              value={page}
-              onChange={(e) => setPage(e)}
-            />
-            {data ? <div>{data[1]} items</div> : null}
-          </div>
-        )
-        : null}
     </div>
   );
 }

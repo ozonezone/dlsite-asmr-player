@@ -4,7 +4,8 @@ use serde::Deserialize;
 #[derive(Deserialize, Type)]
 pub enum ProductSortType {
     Name,
-    Date,
+    ReleasedAt,
+    CreatedAt,
 }
 
 #[derive(Deserialize, Type)]

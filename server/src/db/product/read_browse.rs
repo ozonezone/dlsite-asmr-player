@@ -19,7 +19,8 @@ fn to_db_sort(
     };
     match sort_type {
         ProductSortType::Name => product::title::order(direction),
-        ProductSortType::Date => product::released_at::order(direction),
+        ProductSortType::ReleasedAt => product::released_at::order(direction),
+        ProductSortType::CreatedAt => product::created_at::order(direction),
     }
 }
 

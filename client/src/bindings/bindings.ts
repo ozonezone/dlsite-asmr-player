@@ -26,15 +26,15 @@ export type BrowseParams = { sort_type: ProductSortType; sort_order: ProductSort
 
 export type Circle = { id: string; name: string }
 
-export type ProductSortType = "Name" | "Date"
+export type ProductSortType = "Name" | "ReleasedAt" | "CreatedAt"
+
+export type ProductSortOrder = "Asc" | "Desc"
 
 export type ProductDetailed = { id: string; title: string; circleId: string; price: number; sale_count: number; age: AgeCategory; released_at: string; rate_count: number; review_count: number; path: string; images: string[]; description: string | null; series: string | null; rating: number | null; created_at: string; updated_at: string; circle: Circle; genres: { productId: string; genreId: string; genre: Genre }[]; user_genres: { productId: string; genreId: string; count: number; genre: Genre }[]; creators: ProductCreator[] }
 
 export type AgeCategory = "General" | "R15" | "Adult"
 
 export type ProductCreator = { productId: string; creatorName: string; role: CreatorRole }
-
-export type ProductSortOrder = "Asc" | "Desc"
 
 export type User = { id: number; name: string; password: string; created_at: string }
 
