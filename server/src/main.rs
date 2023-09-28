@@ -2,7 +2,7 @@ use anyhow::Result;
 use axum::Router;
 use std::sync::Arc;
 use tokio::{signal, sync::RwLock};
-use tracing::info;
+use tracing::{error, info, warn};
 
 use crate::{config::Config, prisma::user};
 use prisma::PrismaClient;
@@ -62,13 +62,14 @@ async fn main() -> Result<()> {
             break client;
         }
 
-        info!(
+        warn!(
             "Failed to connect database. Retrying in 5 seconds. (attempt {})",
             n
         );
         tokio::time::sleep(tokio::time::Duration::from_secs(5)).await;
 
         if n >= 10 {
+            error!("Failed to connect to database after 10 attempts");
             panic!("Failed to connect to database");
         }
     };
