@@ -85,7 +85,7 @@ function ProductInner(props: { productId: string }) {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">
           <Tabs
             defaultValue={imageFiles.length == 0 ? "remote" : "local"}
-            className="bg-white px-3"
+            className="bgpx-3"
           >
             <Tabs.List className="pb-2">
               <Tabs.Tab value="remote">DLSite</Tabs.Tab>

@@ -11,7 +11,7 @@ export function Navbar() {
   const location = useLocation();
 
   return (
-    <div className="h-full">
+    <>
       <NavLink
         label="Home"
         leftSection={<HomeIcon className="w-4 h-4" />}
@@ -30,6 +30,6 @@ export function Navbar() {
         active={location.pathname === "//scan"}
         onClick={() => navigate("/scan")}
       />
-    </div>
+    </>
   );
 }

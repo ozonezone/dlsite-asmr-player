@@ -36,12 +36,18 @@ export default function Page() {
             <Header opened={opened} toggle={toggle} />
           </AppShell.Header>
 
-          <AppShell.Navbar className="h-full">
+          <AppShell.Navbar
+            style={{
+              height: "100vh",
+            }}
+          >
             <Navbar />
           </AppShell.Navbar>
 
           <AppShell.Main>
-            <Outlet />
+            <div className="p-2 bg-gray-100">
+              <Outlet />
+            </div>
           </AppShell.Main>
 
           <AppShell.Footer>

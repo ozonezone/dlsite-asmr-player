@@ -31,7 +31,10 @@ export function RemoteSearch(props: {
             value={props.page}
             onChange={props.setPage}
           />
-          <div>{data.products.length} / {data.count} items</div>
+          <div>
+            {data.products.length + props.limit * (props.page - 1)} /{" "}
+            {data.count} items
+          </div>
           <ActionIcon
             onClick={() => {
               refetch();

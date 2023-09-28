@@ -42,6 +42,10 @@ export default function Page() {
   const [input, setInput] = useState(query ?? "");
 
   const [activeTab, setActiveTab] = useState<string | null>("local");
+  const changeActiveTab = (e: string) => {
+    setPage(1);
+    setActiveTab(e);
+  };
 
   const limit = 50;
 
@@ -99,8 +103,8 @@ export default function Page() {
       </form>
       <Tabs
         value={activeTab}
-        onChange={setActiveTab}
-        className="bg-white px-3"
+        onChange={changeActiveTab}
+        className="px-3"
       >
         <Tabs.List className="pb-2">
           <Tabs.Tab value="local">Local</Tabs.Tab>

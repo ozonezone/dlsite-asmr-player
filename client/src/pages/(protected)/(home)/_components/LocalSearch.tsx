@@ -30,7 +30,9 @@ export function LocalSearch(props: {
             value={props.page}
             onChange={props.setPage}
           />
-          <div>{data[0].length} / {data[1]} items</div>
+          <div>
+            {data[0].length + props.limit * (props.page - 1)} / {data[1]} items
+          </div>
           <ActionIcon
             onClick={() => {
               refetch();
@@ -39,7 +41,7 @@ export function LocalSearch(props: {
             <ArrowPathIcon />
           </ActionIcon>
         </div>
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3">
           {data[0].map((data) => {
             return <ItemCard product={data} key={data.id} />;
           })}
