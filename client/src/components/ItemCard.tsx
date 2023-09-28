@@ -13,7 +13,7 @@ export function ItemCard(
           src={product.images[0]}
           className="pb-1"
         />
-        <Text weight={500}>{product.title}</Text>
+        <Text className="font-medium">{product.title}</Text>
       </Link>
 
       <div className="flex flex-wrap text-sm gap-2">

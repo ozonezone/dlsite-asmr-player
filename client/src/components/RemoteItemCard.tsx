@@ -1,4 +1,3 @@
-import { Link } from "react-router-dom";
 import { RemoteSearchResponseItem } from "@/bindings/bindings";
 import { Image, Text } from "@mantine/core";
 import { AgeBadge } from "./AgeBadge";
@@ -17,7 +16,7 @@ export function RemoteItemCard(
           src={product.thumbnail_url}
           className="pb-1"
         />
-        <Text weight={500}>{product.title}</Text>
+        <Text className="font-medium">{product.title}</Text>
       </a>
 
       <div className="flex flex-wrap text-sm gap-2">

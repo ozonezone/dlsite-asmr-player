@@ -82,12 +82,14 @@ function PageInner(
       >
         <p className="text-xl mb-2">Scan</p>
         <SimpleGrid
-          cols={3}
-          spacing="lg"
-          breakpoints={[
-            { maxWidth: "md", cols: 2, spacing: "md" },
-            { maxWidth: "sm", cols: 1, spacing: "sm" },
-          ]}
+          cols={{
+            sm: 1,
+            md: 2,
+          }}
+          spacing={{
+            sm: "sm",
+            md: "md",
+          }}
         >
           <TextInput
             withAsterisk

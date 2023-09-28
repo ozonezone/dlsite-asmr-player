@@ -11,22 +11,22 @@ export function Navbar() {
   const location = useLocation();
 
   return (
-    <div>
+    <div className="h-full">
       <NavLink
         label="Home"
-        icon={<HomeIcon className="w-4 h-4" />}
+        leftSection={<HomeIcon className="w-4 h-4" />}
         active={location.pathname === "/"}
         onClick={() => navigate("/")}
       />
       <NavLink
         label="Settings"
-        icon={<Cog6ToothIcon className="w-4 h-4" />}
+        leftSection={<Cog6ToothIcon className="w-4 h-4" />}
         active={location.pathname === "/settings"}
         onClick={() => navigate("/settings")}
       />
       <NavLink
         label="Scan"
-        icon={<ArrowPathIcon className="w-4 h-4" />}
+        leftSection={<ArrowPathIcon className="w-4 h-4" />}
         active={location.pathname === "//scan"}
         onClick={() => navigate("/scan")}
       />

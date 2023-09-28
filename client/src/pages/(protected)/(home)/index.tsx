@@ -99,7 +99,7 @@ export default function Page() {
       </form>
       <Tabs
         value={activeTab}
-        onTabChange={setActiveTab}
+        onChange={setActiveTab}
         className="bg-white px-3"
       >
         <Tabs.List className="pb-2">

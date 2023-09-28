@@ -1,27 +1,22 @@
-import { Burger, Title, useMantineTheme } from "@mantine/core";
+import { Burger, Title } from "@mantine/core";
 import { Link } from "react-router-dom";
 
 export function Header(
   props: {
     opened: boolean;
-    setOpened: React.Dispatch<React.SetStateAction<boolean>>;
+    toggle: () => void;
   },
 ) {
-  const theme = useMantineTheme();
-
   return (
-    <div
-      style={{ display: "flex", alignItems: "center", height: "100%" }}
-    >
+    <div className="flex items-center h-full">
       <Burger
         opened={props.opened}
-        onClick={() => props.setOpened((o) => !o)}
+        onClick={props.toggle}
         size="sm"
-        color={theme.colors.gray[6]}
-        mr="xl"
+        className="mr-2 ml-2"
       />
 
-      <Link to={`/`}>
+      <Link to="/">
         <Title order={3}>DAPlayer</Title>
       </Link>
     </div>
