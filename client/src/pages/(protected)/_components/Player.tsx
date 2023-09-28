@@ -9,6 +9,7 @@ import { useStreamUrl } from "@/utils/useStreamUrl";
 import { useEffect, useRef } from "react";
 import H5AudioPlayer from "react-h5-audio-player";
 import { rspc } from "@/pages/_state";
+import { Link } from "@/components/Link";
 
 export function Player(props: { playerData: NonNullable<PlayerData> }) {
   const setPlayerData = useSetAtom(playerDataAtom);
@@ -70,8 +71,13 @@ export function Player(props: { playerData: NonNullable<PlayerData> }) {
           header={
             <div className="flex flex-row justify-between">
               <div>
-                <span className="text-gray-400">
-                  {currentFile.productId}/
+                <Link
+                  to={"/product/" + currentFile.productId}
+                >
+                  {currentFile.productId}
+                </Link>
+                <span className="text-gray-400 pl-2">
+                  {product.title}/
                 </span>
                 {currentFileParents.map((path, idx) => (
                   <span className="text-gray-400" key={idx}>

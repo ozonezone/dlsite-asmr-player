@@ -44,8 +44,8 @@ export default function Page() {
             <Navbar />
           </AppShell.Navbar>
 
-          <AppShell.Main>
-            <div className="p-2 bg-gray-100">
+          <AppShell.Main className="flex justify-stretch">
+            <div className="p-2 bg-gray-100 flex-grow">
               <Outlet />
             </div>
           </AppShell.Main>

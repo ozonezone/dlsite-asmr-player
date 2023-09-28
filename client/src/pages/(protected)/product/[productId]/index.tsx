@@ -99,6 +99,7 @@ function ProductInner(props: { productId: string }) {
                 showPlayButton={false}
                 items={product.images.map((url) => {
                   return {
+                    originalHeight: 400,
                     original: url,
                     thumbnail: url,
                   };
@@ -111,6 +112,7 @@ function ProductInner(props: { productId: string }) {
                 items={imageFiles.map((path) => {
                   const url = getStreamUrl(props.productId, path);
                   return {
+                    originalHeight: 400,
                     original: url,
                     thumbnail: url,
                   };
@@ -120,10 +122,10 @@ function ProductInner(props: { productId: string }) {
           </Tabs>
           <div>
             <Table>
-              <tbody>
-                <tr>
-                  <td>DLSite</td>
-                  <td>
+              <Table.Tbody>
+                <Table.Tr>
+                  <Table.Td>DLSite</Table.Td>
+                  <Table.Td>
                     <a
                       className="font-medium text-blue-600 dark:text-blue-500 hover:underline"
                       href={`https://www.dlsite.com/maniax/work/=/product_id/${product.id}.html`}
@@ -132,38 +134,38 @@ function ProductInner(props: { productId: string }) {
                     >
                       {product.id}
                     </a>
-                  </td>
-                </tr>
-                <tr>
-                  <td>対象年齢</td>
-                  <td>
+                  </Table.Td>
+                </Table.Tr>
+                <Table.Tr>
+                  <Table.Td>対象年齢</Table.Td>
+                  <Table.Td>
                     <Link to={"/?q=age:" + product.age}>
                       <AgeBadge age={product.age} />
                     </Link>
-                  </td>
-                </tr>
-                <tr>
-                  <td>販売日</td>
-                  <td>{product.released_at}</td>
-                </tr>
-                <tr>
-                  <td>サークル</td>
-                  <td>
+                  </Table.Td>
+                </Table.Tr>
+                <Table.Tr>
+                  <Table.Td>販売日</Table.Td>
+                  <Table.Td>{product.released_at}</Table.Td>
+                </Table.Tr>
+                <Table.Tr>
+                  <Table.Td>サークル</Table.Td>
+                  <Table.Td>
                     <Link
                       to={"/?q=circle:" +
                         product.circle.name.replaceAll(" ", "_")}
                     >
                       {product.circle.name}
                     </Link>
-                  </td>
-                </tr>
-                <tr>
-                  <td>シリーズ</td>
-                  <td>{product.series ?? "-"}</td>
-                </tr>
-                <tr>
-                  <td>声優</td>
-                  <td>
+                  </Table.Td>
+                </Table.Tr>
+                <Table.Tr>
+                  <Table.Td>シリーズ</Table.Td>
+                  <Table.Td>{product.series ?? "-"}</Table.Td>
+                </Table.Tr>
+                <Table.Tr>
+                  <Table.Td>声優</Table.Td>
+                  <Table.Td>
                     {product.creators.filter((v) => v.role == "VoiceActor").map(
                       (v) => (
                         <Link
@@ -175,11 +177,11 @@ function ProductInner(props: { productId: string }) {
                         </Link>
                       ),
                     )}
-                  </td>
-                </tr>
-                <tr>
-                  <td>ジャンル</td>
-                  <td className="flex flex-row gap-2 flex-wrap">
+                  </Table.Td>
+                </Table.Tr>
+                <Table.Tr>
+                  <Table.Td>ジャンル</Table.Td>
+                  <Table.Td className="flex flex-row gap-2 flex-wrap">
                     {product.genres.map((genre) => {
                       return (
                         <RouterLink
@@ -192,9 +194,9 @@ function ProductInner(props: { productId: string }) {
                         </RouterLink>
                       );
                     })}
-                  </td>
-                </tr>
-              </tbody>
+                  </Table.Td>
+                </Table.Tr>
+              </Table.Tbody>
             </Table>
           </div>
         </div>
