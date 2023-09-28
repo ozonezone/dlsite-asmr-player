@@ -1,4 +1,5 @@
 use dlsite::{
+    interface::WorkType,
     search::{
         options::{Order, ProductSearchOptions},
         SearchResult,
@@ -38,6 +39,7 @@ pub async fn search_product(
     limit: i32,
     order: ProductSortOrder,
     sort: RemoteProductSortType,
+    work_type: WorkType,
 ) -> Result<SearchResult, anyhow::Error> {
     let client = DlsiteClient::default();
 
@@ -73,6 +75,7 @@ pub async fn search_product(
             page: Some(page as u32),
             per_page: Some(limit as u32),
             order: Some(to_dlsite_sort(order, sort)),
+            work_type: Some(vec![work_type]),
             ..Default::default()
         })
         .await?;

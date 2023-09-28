@@ -25,8 +25,6 @@ export type ProductSortOrder = "Asc" | "Desc"
 
 export type Config = { scan_dir: string[] }
 
-export type RemoteProductSortType = "ReleasedAt" | "Trend" | "Download"
-
 export type RemoteSearchParams = { sort_type: RemoteProductSortType; sort_order: ProductSortOrder; page: number; limit: number; query: string }
 
 export type ProductSortType = "Name" | "ReleasedAt" | "CreatedAt"
@@ -44,6 +42,8 @@ export type RemoteSearchResponseItem = { id: string; title: string; circle_name:
 export type User = { id: number; name: string; password: string; created_at: string }
 
 export type RemoteSearchResponse = { products: RemoteSearchResponseItem[]; count: number; query_path: string }
+
+export type RemoteProductSortType = "ReleasedAt" | "Trend" | "Download"
 
 export type Genre = { id: string; name: string }
 

@@ -59,6 +59,7 @@ pub(crate) fn mount() -> RouterBuilder {
                     .to_rspc_internal_error("Invalid limit")?,
                 params.sort_order,
                 params.sort_type,
+                dlsite::interface::WorkType::SOU,
             )
             .await
             .to_rspc_internal_error("Error")?;
