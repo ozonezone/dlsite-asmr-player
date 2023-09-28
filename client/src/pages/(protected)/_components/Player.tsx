@@ -4,11 +4,11 @@ import { useSetAtom } from "jotai";
 import { ActionIcon } from "@mantine/core";
 import { XMarkIcon } from "@heroicons/react/24/solid";
 
-import { PlayerData, playerDataAtom } from "../state";
-import { useStreamUrl } from "../utils";
+import { PlayerData, playerDataAtom } from "../_state";
+import { useStreamUrl } from "@/utils/useStreamUrl";
 import { useEffect, useRef } from "react";
 import H5AudioPlayer from "react-h5-audio-player";
-import { rspc } from "@/state";
+import { rspc } from "@/pages/_state";
 
 export function Player(props: { playerData: NonNullable<PlayerData> }) {
   const setPlayerData = useSetAtom(playerDataAtom);

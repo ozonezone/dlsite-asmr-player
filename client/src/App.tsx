@@ -10,17 +10,9 @@ import { useAtom } from "jotai";
 import { useState } from "react";
 import { useColorScheme } from "@mantine/hooks";
 import { Notifications } from "@mantine/notifications";
+import { Routes } from "@generouted/react-router";
 
-import { router as rootRouter } from "./routes/route";
-import { router as loginRouter } from "./routes/login/route";
-import { router as appRouter } from "./routes/app/route";
-import { clientAtom, queryClient, rspc } from "./state";
-
-const router = createBrowserRouter([
-  rootRouter,
-  loginRouter,
-  appRouter,
-]);
+import { clientAtom, queryClient, rspc } from "@/pages/_state";
 
 const appendCache = createEmotionCache({ key: "mantine", prepend: false });
 
@@ -44,7 +36,7 @@ function App() {
         >
           <Notifications />
           <rspc.Provider client={client} queryClient={queryClient}>
-            <RouterProvider router={router} />
+            <Routes />
           </rspc.Provider>
         </MantineProvider>
       </ColorSchemeProvider>

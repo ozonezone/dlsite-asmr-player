@@ -1,8 +1,8 @@
-import { rspc } from "@/state";
+import { rspc } from "@/pages/_state";
 import { DocumentIcon, PhotoIcon, PlayIcon } from "@heroicons/react/24/solid";
 import { useSetAtom } from "jotai";
 import { Link as RouterLink, useParams } from "react-router-dom";
-import { playerDataAtom } from "../state";
+import { playerDataAtom } from "../../_state";
 import { isAudioFile, isImageFile } from "@/const";
 import {
   Accordion,
@@ -16,10 +16,10 @@ import {
 } from "@mantine/core";
 import ImageGallery from "react-image-gallery";
 import "react-image-gallery/styles/css/image-gallery.css";
-import { AgeBadge } from "./_components/AgeBadge";
+import { AgeBadge } from "@/components/AgeBadge";
 import { Skeleton } from "@/components/Skeleton";
 import { useState } from "react";
-import { useStreamUrl } from "../utils";
+import { useStreamUrl } from "@/utils/useStreamUrl";
 import { Link } from "@/components/Link";
 
 export default function Page() {
@@ -137,7 +137,7 @@ function ProductInner(props: { productId: string }) {
                 <tr>
                   <td>対象年齢</td>
                   <td>
-                    <Link to={"/app?q=age:" + product.age}>
+                    <Link to={"/?q=age:" + product.age}>
                       <AgeBadge age={product.age} />
                     </Link>
                   </td>
@@ -150,7 +150,7 @@ function ProductInner(props: { productId: string }) {
                   <td>サークル</td>
                   <td>
                     <Link
-                      to={"/app?q=circle:" +
+                      to={"/?q=circle:" +
                         product.circle.name.replaceAll(" ", "_")}
                     >
                       {product.circle.name}
@@ -169,7 +169,7 @@ function ProductInner(props: { productId: string }) {
                         <Link
                           key={v.creatorName}
                           className="mr-2"
-                          to={"/app?q=creator:" + v.creatorName}
+                          to={"/?q=creator:" + v.creatorName}
                         >
                           {v.creatorName}
                         </Link>
@@ -184,7 +184,7 @@ function ProductInner(props: { productId: string }) {
                       return (
                         <RouterLink
                           key={genre.genre.name}
-                          to={"/app?q=genre:" + genre.genre.name}
+                          to={"/?q=genre:" + genre.genre.name}
                         >
                           <Badge variant="filled" key={genre.genreId}>
                             {genre.genre.name}

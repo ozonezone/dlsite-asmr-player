@@ -12,8 +12,8 @@ import {
   ProductSortType,
   RemoteProductSortType,
 } from "@/bindings/bindings";
-import { LocalSearch } from "./LocalSearch";
-import { RemoteSearch } from "./RemoteSearch";
+import { LocalSearch } from "./_components/LocalSearch";
+import { RemoteSearch } from "./_components/RemoteSearch";
 
 const sortTypeEnum = ["CreatedAt", "Name", "ReleasedAt"];
 const remoteSortTypeEnum = ["ReleasedAt", "Trend", "Download"];

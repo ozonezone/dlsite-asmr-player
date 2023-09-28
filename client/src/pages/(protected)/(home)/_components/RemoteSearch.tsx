@@ -1,7 +1,7 @@
 import { ProductSortOrder, RemoteProductSortType } from "@/bindings/bindings";
 import { RemoteItemCard } from "@/components/RemoteItemCard";
 import { Skeleton } from "@/components/Skeleton";
-import { rspc } from "@/state";
+import { rspc } from "@/pages/_state";
 import { ArrowPathIcon } from "@heroicons/react/24/solid";
 import { ActionIcon, Pagination } from "@mantine/core";
 
@@ -21,8 +21,6 @@ export function RemoteSearch(props: {
     query: props.query ?? "",
   }]);
   const totalPage = data ? (data.count / props.limit + 1) : null;
-
-  console.log(data?.query_path);
 
   return data && totalPage && !isRefetching
     ? (

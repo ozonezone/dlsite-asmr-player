@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { RemoteSearchResponseItem } from "@/bindings/bindings";
 import { Image, Text } from "@mantine/core";
-import { AgeBadge } from "@/routes/app/[productId]/_components/AgeBadge";
+import { AgeBadge } from "./AgeBadge";
 
 export function RemoteItemCard(
   { product }: { product: RemoteSearchResponseItem },

@@ -1,6 +1,6 @@
 import { Config } from "@/bindings/bindings";
 import { Skeleton } from "@/components/Skeleton";
-import { rspc } from "@/state";
+import { rspc } from "@/pages/_state";
 import {
   Button,
   Divider,

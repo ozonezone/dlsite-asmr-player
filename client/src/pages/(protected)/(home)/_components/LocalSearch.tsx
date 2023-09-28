@@ -1,6 +1,6 @@
 import { ProductSortOrder, ProductSortType } from "@/bindings/bindings";
 import { ItemCard } from "@/components/ItemCard";
-import { rspc } from "@/state";
+import { rspc } from "@/pages/_state";
 import { ArrowPathIcon } from "@heroicons/react/24/solid";
 import { ActionIcon, Pagination, Skeleton } from "@mantine/core";
 

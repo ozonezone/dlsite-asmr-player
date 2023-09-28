@@ -1,5 +1,5 @@
 import { SERVER_HOST, SERVER_PROTOCOL } from "@/const";
-import { tokenAtom } from "@/state";
+import { tokenAtom } from "@/pages/_state";
 import { useAtomValue } from "jotai";
 
 export function useStreamUrl() {

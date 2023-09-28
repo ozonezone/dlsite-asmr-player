@@ -15,20 +15,20 @@ export function Navbar() {
       <NavLink
         label="Home"
         icon={<HomeIcon className="w-4 h-4" />}
-        active={location.pathname === "/app"}
-        onClick={() => navigate("/app")}
+        active={location.pathname === "/"}
+        onClick={() => navigate("/")}
       />
       <NavLink
         label="Settings"
         icon={<Cog6ToothIcon className="w-4 h-4" />}
-        active={location.pathname === "/app/settings"}
-        onClick={() => navigate("/app/settings")}
+        active={location.pathname === "/settings"}
+        onClick={() => navigate("/settings")}
       />
       <NavLink
         label="Scan"
         icon={<ArrowPathIcon className="w-4 h-4" />}
-        active={location.pathname === "/app/scan"}
-        onClick={() => navigate("/app/scan")}
+        active={location.pathname === "//scan"}
+        onClick={() => navigate("/scan")}
       />
     </div>
   );

@@ -1,4 +1,4 @@
-import { rspc, tokenAtom } from "@/state";
+import { rspc, tokenAtom } from "@/pages/_state";
 import { Loader } from "@mantine/core";
 import { useAtom } from "jotai";
 import { useEffect } from "react";

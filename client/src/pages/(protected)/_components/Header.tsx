@@ -1,10 +1,4 @@
-import {
-  Burger,
-  MediaQuery,
-  Text,
-  Title,
-  useMantineTheme,
-} from "@mantine/core";
+import { Burger, Title, useMantineTheme } from "@mantine/core";
 import { Link } from "react-router-dom";
 
 export function Header(
@@ -27,7 +21,7 @@ export function Header(
         mr="xl"
       />
 
-      <Link to={`/app/`}>
+      <Link to={`/`}>
         <Title order={3}>DAPlayer</Title>
       </Link>
     </div>

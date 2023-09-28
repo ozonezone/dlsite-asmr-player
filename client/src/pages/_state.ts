@@ -5,7 +5,7 @@ import { QueryClient } from "@tanstack/react-query";
 import { createReactQueryHooks } from "@rspc/react";
 import { createClient, WebsocketTransport } from "@rspc/client";
 import type { Procedures } from "@/bindings/bindings";
-import { SERVER_HOST, WS_PROTOCOL } from "./const";
+import { SERVER_HOST, WS_PROTOCOL } from "../const";
 
 export const tokenAtom = atomWithStorage<null | string>(
   "token",
